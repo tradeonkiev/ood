@@ -10,6 +10,6 @@ int main(int argc, char *argv[]) {
     gfx::SvgCanvas canvas(drawingName);
 
     shapes::Picture picture;
-    app::CommandProcessor commandProcessor(picture, canvas, std::cout);
+    CommandProcessor commandProcessor(picture, canvas, std::cout);
     commandProcessor.Run(std::cin);
 }
