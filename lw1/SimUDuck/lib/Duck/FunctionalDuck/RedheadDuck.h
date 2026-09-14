@@ -6,12 +6,17 @@
 #include "Behavior/QuackBehavior.h"
 #include "Duck.h"
 
-class RedheadDuck : public Duck {
-public:
-    RedheadDuck() :
-        Duck(FlyBehavior::MakeFlyWithWings(), FunctionalQuackBehavior::MakeQuack(), DanceBehavior::MakeMinuet()) {}
+namespace functional {
 
-    void Display() const override { std::cout << "I'm redhead duck" << std::endl; }
-};
+    class RedheadDuck : public FuncDuck {
+    public:
+        RedheadDuck() :
+            FuncDuck(FlyBehavior::MakeFlyWithWings(), FunctionalQuackBehavior::MakeQuack(),
+                     DanceBehavior::MakeMinuet()) {}
+
+        void Display() const override { std::cout << "I'm redhead duck" << std::endl; }
+    };
+
+} // namespace functional
 
 #endif // OOD_FUNCTIONAL_REDHEAD_DUCK_H

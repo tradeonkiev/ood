@@ -11,7 +11,7 @@ namespace FlyBehavior {
     using Strategy = std::function<unsigned()>;
 
     inline Strategy MakeFlyWithWings() {
-        return [flightCount = 0u]() mutable {
+        return [flightCount = 0]() mutable {
             std::cout << "I'm flying with wings!!" << std::endl;
             return ++flightCount;
         };

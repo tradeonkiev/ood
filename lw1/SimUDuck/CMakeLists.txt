@@ -17,7 +17,9 @@ if (BUILD_TESTING)
         FetchContent_MakeAvailable(googletest)
     endif ()
 
-    add_executable(duck_dance_tests tests/DuckDanceTests.cpp)
+    add_executable(duck_dance_tests
+            tests/DuckDanceTests.cpp
+            tests/FunctionalDuckTests.cpp)
     target_link_libraries(duck_dance_tests PRIVATE GTest::gmock_main)
 
     include(GoogleTest)

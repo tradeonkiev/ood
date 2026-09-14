@@ -49,7 +49,7 @@ namespace shapes {
         return *m_shapes[index];
     }
 
-    const Shape &Picture::GetShapeAt(std::size_t index) const {
+    const Shape &Picture::(std::size_t index) const {
         if (index >= m_shapes.size()) {
             throw std::out_of_range("Shape index is out of range");
         }

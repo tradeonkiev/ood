@@ -6,18 +6,12 @@
 #include "../Quack/QuackBehavior.h"
 #include "Duck.h"
 
-class MallardDuck : public Duck
-{
+class MallardDuck : public Duck {
 public:
-	MallardDuck()
-		: Duck(std::make_unique<FlyWithWings>(), std::make_unique<QuackBehavior>(), std::make_unique<WaltzDance>())
-	{
-	}
+    MallardDuck() :
+        Duck(std::make_unique<FlyWithWings>(), std::make_unique<QuackBehavior>(), std::make_unique<WaltzDance>()) {}
 
-	void Display() const override
-	{
-		std::cout << "I'm mallard duck" << std::endl;
-	}
+    void Display() const override { std::cout << "I'm mallard duck" << std::endl; }
 };
 
 #endif
