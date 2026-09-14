@@ -7,6 +7,7 @@
 #include "Strategies/Triangle/TriangleStrategy.h"
 
 #include <array>
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
@@ -108,6 +109,24 @@ void CommandProcessor::Execute(const std::string &commandLine) {
     if (command == "DrawPicture") {
         m_picture.Draw(m_canvas);
         return;
+    }
+
+    if (command == "Help") {
+        std::cout << std::endl
+                  << "===========================" << std::endl
+                  << "AddShape <id> <цвет> <тип> <параметры>" << std::endl
+                  << "MoveShape <id> <dx> <dy>" << std::endl
+                  << "MovePicture <dx> <dy>" << std::endl
+                  << "DeleteShape <id>" << std::endl
+                  << "---------------------------" << std::endl
+                  << "ChangeShape <id> <тип> <параметры>" << std::endl
+                  << "ChangeColor <id> <цвет>" << std::endl
+                  << "---------------------------" << std::endl
+                  << "DrawShape <id>" << std::endl
+                  << "DrawPicture" << std::endl
+                  << "---------------------------" << std::endl
+                  << "List" << std::endl
+                  << std::endl;
     }
 
     throw std::invalid_argument("Unknown command: " + command);

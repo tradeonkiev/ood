@@ -18,7 +18,8 @@ namespace FlyBehavior {
     }
 
     inline Strategy MakeFlyNoWay() {
-        return [] { return 0u; };
+        return [] { return 0; };
     }
 } // namespace FlyBehavior
+
 #endif // OOD_FLYBEHAVIOR_H
