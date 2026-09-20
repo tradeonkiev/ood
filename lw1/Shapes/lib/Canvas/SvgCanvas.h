@@ -8,7 +8,7 @@
 
 namespace gfx {
 
-    class SvgCanvas : public ICanvas {
+    class SvgCanvas final : public ICanvas {
     public:
         explicit SvgCanvas(const std::string &drawingName);
         ~SvgCanvas() override;
@@ -19,10 +19,9 @@ namespace gfx {
         void LineTo(shapes::Point point) override;
         void DrawEllipse(shapes::Point center, double radiusX, double radiusY) override;
         void DrawText(shapes::Point point, double fontSize, const std::string &text) override;
+        void Flush() const override;
 
     private:
-        void Flush();
-
         std::string m_fileName;
         std::ostringstream m_content;
         Color m_color;

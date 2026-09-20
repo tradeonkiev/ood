@@ -18,6 +18,8 @@ namespace shapes {
 
     void Shape::Draw(gfx::ICanvas &canvas) const { m_strategy->Draw(canvas, m_color); }
 
+    void Shape::Move(int dx, int dy) const { m_strategy->Move(dx, dy); }
+
     Rect Shape::GetBounds() const { return m_strategy->GetBounds(); }
 
     std::string Shape::GetType() const { return m_strategy->GetType(); }

@@ -12,7 +12,10 @@ TextStrategy::TextStrategy(shapes::Point topLeft, double fontSize, std::string t
 void TextStrategy::Draw(gfx::ICanvas &canvas, gfx::Color color) const {
     canvas.SetColor(color);
     canvas.DrawText(m_topLeft, m_fontSize, m_text);
+    canvas.Flush();
 }
+
+void TextStrategy::Move(int dx, int dy) { m_topLeft = {m_topLeft.x + dx, m_topLeft.y + dy}; }
 
 shapes::Rect TextStrategy::GetBounds() const { return {m_topLeft.x, m_topLeft.y, 0, m_fontSize}; }
 

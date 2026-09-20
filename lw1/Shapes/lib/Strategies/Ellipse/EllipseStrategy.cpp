@@ -11,7 +11,10 @@ EllipseStrategy::EllipseStrategy(shapes::Point center, double xRadius, double yR
 void EllipseStrategy::Draw(gfx::ICanvas &canvas, gfx::Color color) const {
     canvas.SetColor(color);
     canvas.DrawEllipse(m_center, m_xRadius, m_yRadius);
+    canvas.Flush();
 }
+
+void EllipseStrategy::Move(int dx, int dy) { m_center = {m_center.x + dx, m_center.y + dy}; }
 
 void EllipseStrategy::SetBounds(const shapes::Rect &bounds) {
     shapes::detail::ValidateBounds(bounds);

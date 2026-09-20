@@ -7,6 +7,7 @@ class TextStrategy : public shapes::IShapeGeometry {
 public:
     TextStrategy(shapes::Point topLeft, double fontSize, std::string text);
     void Draw(gfx::ICanvas &canvas, gfx::Color color) const override;
+    void Move(int dx, int dy) override;
 
     void SetBounds(const shapes::Rect &bounds) override;
     shapes::Rect GetBounds() const override;

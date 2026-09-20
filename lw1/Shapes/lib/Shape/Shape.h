@@ -13,6 +13,7 @@ namespace shapes {
         gfx::Color GetColor() const noexcept;
         void SetColor(gfx::Color color) noexcept;
         void Draw(gfx::ICanvas &canvas) const;
+        void Move(int dx, int dy) const;
         Rect GetBounds() const;
         std::string GetType() const;
         std::string GetParameters() const;

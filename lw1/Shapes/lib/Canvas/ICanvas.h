@@ -16,6 +16,7 @@ namespace gfx {
         virtual void LineTo(shapes::Point point) = 0;
         virtual void DrawEllipse(shapes::Point center, double radiusX, double radiusY) = 0;
         virtual void DrawText(shapes::Point point, double fontSize, const std::string &text) = 0;
+        virtual void Flush() const = 0;
     };
 
 } // namespace gfx

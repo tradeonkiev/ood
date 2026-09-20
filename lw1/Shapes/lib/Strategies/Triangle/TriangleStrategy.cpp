@@ -11,6 +11,13 @@ void TriangleStrategy::Draw(gfx::ICanvas &canvas, gfx::Color color) const {
     canvas.LineTo(m_vertices[1]);
     canvas.LineTo(m_vertices[2]);
     canvas.LineTo(m_vertices[0]);
+    canvas.Flush();
+}
+
+void TriangleStrategy::Move(int dx, int dy) {
+    for (auto &verticle: m_vertices) {
+        verticle = {verticle.x + dx, verticle.y + dy};
+    }
 }
 
 shapes::Rect TriangleStrategy::GetBounds() const {

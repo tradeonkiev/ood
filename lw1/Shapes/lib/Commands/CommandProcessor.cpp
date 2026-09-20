@@ -50,10 +50,7 @@ void CommandProcessor::Execute(const std::string &commandLine) {
         input >> id >> dx >> dy;
 
         auto &shape = m_picture.GetShape(id);
-        auto bounds = shape.GetBounds();
-        bounds.left += dx;
-        bounds.top += dy;
-        shape.SetBounds(bounds);
+        shape.Move(dx, dy);
         return;
     }
 
@@ -127,6 +124,7 @@ void CommandProcessor::Execute(const std::string &commandLine) {
                   << "---------------------------" << std::endl
                   << "List" << std::endl
                   << std::endl;
+        return;
     }
 
     throw std::invalid_argument("Unknown command: " + command);

@@ -17,7 +17,7 @@ namespace gfx {
 
     SvgCanvas::~SvgCanvas() = default;
 
-    void SvgCanvas::Flush() {
+    void SvgCanvas::Flush() const {
         std::ofstream drawing(m_fileName);
         drawing << "<svg xmlns=\"http://www.w3.org/2000/svg\">\n" << m_content.str() << "</svg>\n";
     }
@@ -34,21 +34,18 @@ namespace gfx {
                   << point.y << "\" stroke=\"" << m_color.ToHexString() << "\" />\n";
         m_currentX = point.x;
         m_currentY = point.y;
-        Flush();
     }
 
     void SvgCanvas::DrawEllipse(shapes::Point center, double radiusX, double radiusY) {
         m_content << "  <ellipse cx=\"" << center.x << "\" cy=\"" << center.y << "\" rx=\"" << radiusX << "\" ry=\""
                   << radiusY << "\" fill=\"" << m_color.ToHexString() << "\" stroke=\"" << m_color.ToHexString()
                   << "\" />\n";
-        Flush();
     }
 
     void SvgCanvas::DrawText(shapes::Point point, double fontSize, const std::string &text) {
         m_content << "  <text x=\"" << point.x << "\" y=\"" << point.y << "\" font-size=\"" << fontSize
                   << "\" dominant-baseline=\"hanging\" fill=\"" << m_color.ToHexString() << "\">" << text
                   << "</text>\n";
-        Flush();
     }
 
 } // namespace gfx

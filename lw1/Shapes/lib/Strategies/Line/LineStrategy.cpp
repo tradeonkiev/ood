@@ -12,6 +12,12 @@ void LineStrategy::Draw(gfx::ICanvas &canvas, gfx::Color color) const {
     canvas.SetColor(color);
     canvas.MoveTo(m_start);
     canvas.LineTo(m_end);
+    canvas.Flush();
+}
+
+void LineStrategy::Move(int dx, int dy) {
+    m_start = {m_start.x + dx, m_start.y + dy};
+    m_end = {m_end.x + dx, m_end.y + dy};
 }
 
 shapes::Rect LineStrategy::GetBounds() const {
