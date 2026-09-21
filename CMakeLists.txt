@@ -10,3 +10,4 @@ include(CTest)
 
 add_subdirectory(lw1/SimUDuck)
 add_subdirectory(lw1/Shapes)
+add_subdirectory(lw2/task1)

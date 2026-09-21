@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <utility>
 
+
 namespace shapes {
     void Picture::AddShape(std::unique_ptr<Shape> shape) {
         const std::string id = shape->GetId();
@@ -19,6 +20,9 @@ namespace shapes {
             m_shapes.pop_back();
             throw;
         }
+
+        shapePtr->RegisterObserver(*this);
+        NotifyObservers(*this);
     }
 
     void Picture::DeleteShape(const std::string &id) {
@@ -27,13 +31,16 @@ namespace shapes {
             throw std::out_of_range("Shape with id:" + id + " was not found");
         }
 
-        const Shape *shapePtr = indexedShape->second;
-        const auto orderedShape = std::find_if(m_shapes.begin(), m_shapes.end(), [shapePtr](const auto &shape) {
-            return shape.get() == shapePtr;
-        });
+        Shape *shapePtr = indexedShape->second;
+        const auto orderedShape = std::find_if(m_shapes.begin(), m_shapes.end(),
+                                               [shapePtr](const auto &shape) { return shape.get() == shapePtr; });
+
+        shapePtr->RemoveObserver(*this);
 
         m_shapes.erase(orderedShape);
         m_shapesById.erase(indexedShape);
+
+        NotifyObservers(*this);
     }
 
     Shape &Picture::GetShape(const std::string &id) {
@@ -96,5 +103,7 @@ namespace shapes {
         return shape != m_shapesById.end() ? shape->second : nullptr;
     }
 
+
+    void Picture::Update(const Shape &) { NotifyObservers(*this); }
 
 } // namespace shapes

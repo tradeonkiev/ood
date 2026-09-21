@@ -77,3 +77,30 @@ TEST(DuckDanceTest, CallsDance) {
     duck.Fly();
     duck.Fly();
 }
+
+
+// TEST(DecoyDuckTest, DoesNotFly) {
+//     TestDuck decoyDuck(std::make_unique<NoDance>(), std::make_unique<FlyNoWay>(),
+//                        std::make_unique<MuteQuackBehavior>());
+//     decoyDuck.Fly();
+//     EXPECT_EQ(decoyDuck.GetFlightCount(), 0);
+// }
+
+// TEST(DecoyDuckTest, DoesNotQuack) {
+//     TestDuck decoyDuck(std::make_unique<NoDance>(), std::make_unique<FlyNoWay>(),
+//                        std::make_unique<MuteQuackBehavior>());
+//     testing::internal::CaptureStdout();
+//     decoyDuck.Quack();
+//     std::string output = testing::internal::GetCapturedStdout();
+//     EXPECT_TRUE(output);
+// }
+
+// TEST(DecoyDuckTest, DoesNotDance) {
+//     auto danceBehavior = std::make_unique<MockDanceBehavior>();
+//     auto *mock = danceBehavior.get();
+//     TestDuck decoyDuck(std::make_unique<NoDance>(), std::make_unique<FlyNoWay>(),
+//                        std::make_unique<MuteQuackBehavior>());
+
+//     EXPECT_CALL(*mock, Dance()).Times(0);
+//     decoyDuck.Dance();
+// }

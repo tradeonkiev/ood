@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 4.3)
 project(Shapes LANGUAGES CXX)
 
-add_library(shapes_lib
+add_library(lw2_shapes_lib
         lib/Canvas/SvgCanvas.cpp
         lib/Commands/CommandProcessor.cpp
         lib/Picture/Picture.cpp
@@ -11,15 +11,15 @@ add_library(shapes_lib
         lib/Strategies/Rectangle/RectangleStrategy.cpp
         lib/Strategies/Line/LineStrategy.cpp
         lib/Strategies/Text/TextStrategy.cpp)
-target_include_directories(shapes_lib PUBLIC lib)
-target_compile_features(shapes_lib PUBLIC cxx_std_23)
-set_target_properties(shapes_lib PROPERTIES CXX_EXTENSIONS OFF)
+target_include_directories(lw2_shapes_lib PUBLIC lib)
+target_compile_features(lw2_shapes_lib PUBLIC cxx_std_23)
+set_target_properties(lw2_shapes_lib PROPERTIES CXX_EXTENSIONS OFF)
 
-add_executable(shapes main.cpp)
-target_link_libraries(shapes PRIVATE shapes_lib)
+add_executable(lw2_shapes main.cpp)
+target_link_libraries(lw2_shapes PRIVATE lw2_shapes_lib)
 
 if (MINGW)
-    target_link_options(shapes PRIVATE -static-libgcc -static-libstdc++)
+    target_link_options(lw2_shapes PRIVATE -static-libgcc -static-libstdc++)
 endif ()
 
 include(CTest)
@@ -33,9 +33,9 @@ if (BUILD_TESTING)
         FetchContent_MakeAvailable(googletest)
     endif ()
 
-    add_executable(shapes_tests tests/ShapesTests.cpp)
-    target_link_libraries(shapes_tests PRIVATE shapes_lib GTest::gmock_main)
+    add_executable(lw2_shapes_tests tests/ShapesTests.cpp)
+    target_link_libraries(lw2_shapes_tests PRIVATE lw2_shapes_lib GTest::gmock_main)
 
     include(GoogleTest)
-    gtest_discover_tests(shapes_tests)
+    gtest_discover_tests(lw2_shapes_tests)
 endif ()

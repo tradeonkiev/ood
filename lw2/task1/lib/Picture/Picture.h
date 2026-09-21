@@ -7,9 +7,11 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "../Observer/IObserver.h"
+#include "../Observer/Observable.h"
 
 namespace shapes {
-    class Picture {
+    class Picture : public observer::IObserver<Shape>, public observer::Observable<Picture> {
     public:
         void AddShape(std::unique_ptr<Shape> shape);
         void DeleteShape(const std::string &id);
@@ -20,6 +22,8 @@ namespace shapes {
         Shape &GetShapeAt(std::size_t index);
         const Shape &GetShapeAt(std::size_t index) const;
         std::size_t GetShapeCount() const noexcept;
+
+        void Update(const Shape &shape) override;
 
     private:
         Shape *FindShape(const std::string &id) noexcept;
