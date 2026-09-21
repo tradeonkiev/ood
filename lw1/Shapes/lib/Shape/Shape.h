@@ -14,13 +14,13 @@ namespace shapes {
         void SetColor(gfx::Color color) noexcept;
         void Draw(gfx::ICanvas &canvas) const;
         void Move(int dx, int dy) const;
-        Rect GetBounds() const;
         std::string GetType() const;
         std::string GetParameters() const;
         void SetBounds(const Rect &bounds);
         void SetStrategy(std::unique_ptr<IShapeGeometry> strategy);
 
     private:
+        Rect GetBounds() const;
         std::string m_id;
         gfx::Color m_color;
         std::unique_ptr<IShapeGeometry> m_strategy;

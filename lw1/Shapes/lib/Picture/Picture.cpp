@@ -54,13 +54,6 @@ namespace shapes {
         return *shape;
     }
 
-    Shape &Picture::GetShapeAt(std::size_t index) {
-        if (index >= m_shapes.size()) {
-            throw std::out_of_range("Shape index is out of range");
-        }
-        return *m_shapes[index];
-    }
-
     const Shape &Picture::GetShapeAt(std::size_t index) const {
         if (index >= m_shapes.size()) {
             throw std::out_of_range("Shape index is out of range");
@@ -72,10 +65,7 @@ namespace shapes {
 
     void Picture::Move(const double dx, const double dy) {
         for (const auto &shape: m_shapes) {
-            auto bounds = shape->GetBounds();
-            bounds.left += dx;
-            bounds.top += dy;
-            shape->SetBounds(bounds);
+            shape->Move(dx, dy);
         }
     }
 

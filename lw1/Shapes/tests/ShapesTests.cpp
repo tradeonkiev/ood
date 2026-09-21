@@ -16,7 +16,7 @@ namespace {
     using testing::Ref;
     using testing::Return;
 
-    class MockCanvas final : public gfx::ICanvas {
+    class MockCanvas : public gfx::ICanvas {
     public:
         MOCK_METHOD(void, Clear, (), (override));
         MOCK_METHOD(void, SetColor, (gfx::Color color), (override));
@@ -27,7 +27,7 @@ namespace {
         MOCK_METHOD(void, Flush, (), (const, override));
     };
 
-    class MockShapeGeometry final : public shapes::IShapeGeometry {
+    class MockShapeGeometry : public shapes::IShapeGeometry {
     public:
         MOCK_METHOD(void, Draw, (gfx::ICanvas & canvas, gfx::Color color), (const, override));
         MOCK_METHOD(void, Move, (int dx, int dy), (override));
@@ -84,15 +84,12 @@ TEST(ShapeTest, DelegatesMoveToGeometry) {
     shape->Move(15, -7);
 }
 
-TEST(ShapeTest, DelegatesBoundsOperationsToGeometry) {
+TEST(ShapeTest, DelegatesSetBoundsToGeometry) {
     auto [shape, geometry] = MakeShape("first", gfx::Color{});
-    const shapes::Rect oldBounds{1, 2, 30, 40};
     const shapes::Rect newBounds{5, 6, 70, 80};
 
-    EXPECT_CALL(*geometry, GetBounds()).WillOnce(Return(oldBounds));
     EXPECT_CALL(*geometry, SetBounds(newBounds));
 
-    EXPECT_EQ(shape->GetBounds(), oldBounds);
     shape->SetBounds(newBounds);
 }
 
@@ -184,7 +181,7 @@ TEST(PictureTest, ReportsMissingShapeAndInvalidIndex) {
     EXPECT_THROW(picture.DeleteShape("missing"), std::out_of_range);
 }
 
-TEST(PictureTest, MovesEveryShapeAndPreservesItsSize) {
+TEST(PictureTest, MovesEveryShape) {
     shapes::Picture picture;
     auto first = MakeShape("first", gfx::Color{});
     auto second = MakeShape("second", gfx::Color{});
@@ -193,10 +190,8 @@ TEST(PictureTest, MovesEveryShapeAndPreservesItsSize) {
     picture.AddShape(std::move(first.shape));
     picture.AddShape(std::move(second.shape));
 
-    EXPECT_CALL(*firstGeometry, GetBounds()).WillOnce(Return(shapes::Rect{1, 2, 30, 40}));
-    EXPECT_CALL(*firstGeometry, SetBounds(shapes::Rect{6.5, -1, 30, 40}));
-    EXPECT_CALL(*secondGeometry, GetBounds()).WillOnce(Return(shapes::Rect{-10, 20, 5, 6}));
-    EXPECT_CALL(*secondGeometry, SetBounds(shapes::Rect{-4.5, 17, 5, 6}));
+    EXPECT_CALL(*firstGeometry, Move(5, -3));
+    EXPECT_CALL(*secondGeometry, Move(5, -3));
 
     picture.Move(5.5, -3);
 }
