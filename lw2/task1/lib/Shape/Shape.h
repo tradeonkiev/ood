@@ -22,7 +22,6 @@ namespace shapes {
 
 
     private:
-        void NotifyChanged();
         Rect GetBounds() const;
 
         std::string m_id;
