@@ -46,7 +46,7 @@ namespace {
     }
 } // namespace
 
-TEST(ObserverTest, ShapeObserverIsNotifiedAfterShapeChanges) {
+TEST(ObserverTest, NotifyAfterChange) {
     auto shape = MakeShape("shape");
     CountingObserver<shapes::Shape> observer;
     shape->RegisterObserver(observer);
@@ -56,7 +56,7 @@ TEST(ObserverTest, ShapeObserverIsNotifiedAfterShapeChanges) {
     EXPECT_EQ(observer.GetUpdateCount(), 1);
 }
 
-TEST(ObserverTest, PictureObserverIsNotifiedWhenOwnedShapeChanges) {
+TEST(ObserverTest, PictureObserverIsNotifiedByChangingShape) {
     shapes::Picture picture;
     picture.AddShape(MakeShape("shape"));
     CountingObserver<shapes::Picture> observer;
@@ -67,7 +67,7 @@ TEST(ObserverTest, PictureObserverIsNotifiedWhenOwnedShapeChanges) {
     EXPECT_EQ(observer.GetUpdateCount(), 1);
 }
 
-TEST(ObserverTest, PictureObserverIsNotifiedWhenShapeChangesThroughReference) {
+TEST(ObserverTest, NotifyByReference) {
     shapes::Picture picture;
     picture.AddShape(MakeShape("shape"));
     CountingObserver<shapes::Picture> observer;
@@ -79,7 +79,7 @@ TEST(ObserverTest, PictureObserverIsNotifiedWhenShapeChangesThroughReference) {
     EXPECT_EQ(observer.GetUpdateCount(), 1);
 }
 
-TEST(ObserverTest, PictureObserverIsNotifiedAfterAddingAndDeletingShape) {
+TEST(ObserverTest, DeleteNotifingShape) {
     shapes::Picture picture;
     CountingObserver<shapes::Picture> observer;
     picture.RegisterObserver(observer);
@@ -90,7 +90,7 @@ TEST(ObserverTest, PictureObserverIsNotifiedAfterAddingAndDeletingShape) {
     EXPECT_EQ(observer.GetUpdateCount(), 2);
 }
 
-TEST(ObserverTest, PictureStartsObservingAddedShape) {
+TEST(ObserverTest, ObserveAfterAdd) {
     shapes::Picture picture;
     CountingObserver<shapes::Picture> observer;
     picture.RegisterObserver(observer);
@@ -102,7 +102,7 @@ TEST(ObserverTest, PictureStartsObservingAddedShape) {
     EXPECT_EQ(observer.GetUpdateCount(), 1);
 }
 
-TEST(ObserverTest, PictureStopsObservingDeletedShape) {
+TEST(ObserverTest, AfterDeathNoSubscription) {
     shapes::Picture picture;
     CountingObserver<shapes::Picture> observer;
     picture.RegisterObserver(observer);
