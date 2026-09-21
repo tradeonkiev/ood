@@ -78,29 +78,18 @@ TEST(DuckDanceTest, CallsDance) {
     duck.Fly();
 }
 
+TEST(DuckTest, DoesNotQuackWhenItCannotFly) {
+    auto flightBehavior = std::make_unique<MockFlyBehavior>();
+    auto quackBehavior = std::make_unique<MockQuackBehavior>();
+    auto *flightMock = flightBehavior.get();
+    auto *quackMock = quackBehavior.get();
 
-// TEST(DecoyDuckTest, DoesNotFly) {
-//     TestDuck decoyDuck(std::make_unique<NoDance>(), std::make_unique<FlyNoWay>(),
-//                        std::make_unique<MuteQuackBehavior>());
-//     decoyDuck.Fly();
-//     EXPECT_EQ(decoyDuck.GetFlightCount(), 0);
-// }
+    const TestDuck duck(std::make_unique<NoDance>(), std::move(flightBehavior), std::move(quackBehavior));
 
-// TEST(DecoyDuckTest, DoesNotQuack) {
-//     TestDuck decoyDuck(std::make_unique<NoDance>(), std::make_unique<FlyNoWay>(),
-//                        std::make_unique<MuteQuackBehavior>());
-//     testing::internal::CaptureStdout();
-//     decoyDuck.Quack();
-//     std::string output = testing::internal::GetCapturedStdout();
-//     EXPECT_TRUE(output);
-// }
+    EXPECT_CALL(*flightMock, CanFly()).WillOnce(testing::Return(false));
+    EXPECT_CALL(*flightMock, Fly()).Times(0);
+    EXPECT_CALL(*flightMock, GetFlightCount()).Times(0);
+    EXPECT_CALL(*quackMock, Quack()).Times(0);
 
-// TEST(DecoyDuckTest, DoesNotDance) {
-//     auto danceBehavior = std::make_unique<MockDanceBehavior>();
-//     auto *mock = danceBehavior.get();
-//     TestDuck decoyDuck(std::make_unique<NoDance>(), std::make_unique<FlyNoWay>(),
-//                        std::make_unique<MuteQuackBehavior>());
-
-//     EXPECT_CALL(*mock, Dance()).Times(0);
-//     decoyDuck.Dance();
-// }
+    duck.Fly();
+}

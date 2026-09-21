@@ -8,7 +8,7 @@
 
 namespace gfx {
 
-    class SvgCanvas final : public ICanvas {
+    class SvgCanvas : public ICanvas {
     public:
         explicit SvgCanvas(const std::string &drawingName);
         ~SvgCanvas() override;

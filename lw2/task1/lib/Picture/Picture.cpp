@@ -25,7 +25,7 @@ namespace shapes {
         NotifyObservers(*this);
     }
 
-    void Picture::DeleteShape(const std::string &id) {
+    std::unique_ptr<Shape> Picture::DeleteShape(const std::string &id) {
         const auto indexedShape = m_shapesById.find(id);
         if (indexedShape == m_shapesById.end()) {
             throw std::out_of_range("Shape with id:" + id + " was not found");
@@ -37,10 +37,12 @@ namespace shapes {
 
         shapePtr->RemoveObserver(*this);
 
+        auto removedShape = std::move(*orderedShape);
         m_shapes.erase(orderedShape);
         m_shapesById.erase(indexedShape);
 
         NotifyObservers(*this);
+        return removedShape;
     }
 
     Shape &Picture::GetShape(const std::string &id) {

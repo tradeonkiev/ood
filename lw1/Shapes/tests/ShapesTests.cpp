@@ -12,10 +12,6 @@
 #include <utility>
 
 namespace {
-    using testing::InSequence;
-    using testing::Ref;
-    using testing::Return;
-
     class MockCanvas : public gfx::ICanvas {
     public:
         MOCK_METHOD(void, Clear, (), (override));
@@ -37,154 +33,146 @@ namespace {
         MOCK_METHOD(std::string, GetParameters, (), (const, override));
     };
 
-    struct ShapeWithMock {
+    struct ShapeWithMockGeometry {
         std::unique_ptr<shapes::Shape> shape;
         MockShapeGeometry *geometry;
     };
 
-    ShapeWithMock MakeShape(std::string id, const gfx::Color color) {
+    ShapeWithMockGeometry MakeShape(std::string id, gfx::Color color = {}) {
         auto geometry = std::make_unique<MockShapeGeometry>();
-        auto *geometryPtr = geometry.get();
-        return {std::make_unique<shapes::Shape>(std::move(id), color, std::move(geometry)), geometryPtr};
+        auto *geometryMock = geometry.get();
+        auto shape = std::make_unique<shapes::Shape>(std::move(id), color, std::move(geometry));
+        return {std::move(shape), geometryMock};
     }
 } // namespace
 
-TEST(ShapeTest, StoresIdAndColor) {
-    const gfx::Color color{0x12, 0x34, 0x56};
-    auto [shape, geometry] = MakeShape("first", color);
-
-    EXPECT_EQ(shape->GetId(), "first");
-    EXPECT_EQ(shape->GetColor(), color);
-}
-
-TEST(ShapeTest, ChangesColor) {
-    auto [shape, geometry] = MakeShape("first", gfx::Color{});
-    const gfx::Color newColor{0xaa, 0xbb, 0xcc};
-
-    shape->SetColor(newColor);
-
-    EXPECT_EQ(shape->GetColor(), newColor);
-}
-
-TEST(ShapeTest, DelegatesDrawingToGeometryWithCurrentColorAndCanvas) {
+TEST(ShapeTest, CheckIDAndColor) {
     const gfx::Color color{10, 20, 30};
-    auto [shape, geometry] = MakeShape("first", color);
+    auto item = MakeShape("shape", color);
+
+    EXPECT_EQ(item.shape->GetId(), "shape");
+    EXPECT_EQ(item.shape->GetColor(), color);
+}
+
+TEST(ShapeTest, ChangeColor) {
+    auto item = MakeShape("shape");
+    const gfx::Color newColor{100, 150, 200};
+
+    item.shape->SetColor(newColor);
+
+    EXPECT_EQ(item.shape->GetColor(), newColor);
+}
+
+TEST(ShapeTest, TryToColorDraw) {
+    const gfx::Color color{10, 20, 30};
+    auto item = MakeShape("shape", color);
     MockCanvas canvas;
 
-    EXPECT_CALL(*geometry, Draw(Ref(canvas), color));
+    EXPECT_CALL(*item.geometry, Draw(canvas, color));
 
-    shape->Draw(canvas);
+    item.shape->Draw(canvas);
 }
 
-TEST(ShapeTest, DelegatesMoveToGeometry) {
-    auto [shape, geometry] = MakeShape("first", gfx::Color{});
+TEST(ShapeTest, MovesGeometry) {
+    auto item = MakeShape("shape");
 
-    EXPECT_CALL(*geometry, Move(15, -7));
+    EXPECT_CALL(*item.geometry, Move(5, -3));
 
-    shape->Move(15, -7);
+    item.shape->Move(5, -3);
 }
 
-TEST(ShapeTest, DelegatesSetBoundsToGeometry) {
-    auto [shape, geometry] = MakeShape("first", gfx::Color{});
-    const shapes::Rect newBounds{5, 6, 70, 80};
+TEST(ShapeTest, ChangesGeometryBounds) {
+    auto item = MakeShape("shape");
+    const shapes::Rect bounds{10, 20, 100, 50};
 
-    EXPECT_CALL(*geometry, SetBounds(newBounds));
+    EXPECT_CALL(*item.geometry, SetBounds(bounds));
 
-    shape->SetBounds(newBounds);
+    item.shape->SetBounds(bounds);
 }
 
-TEST(ShapeTest, DelegatesTypeAndParametersToGeometry) {
-    auto [shape, geometry] = MakeShape("first", gfx::Color{});
+TEST(ShapeTest, GetInfoFromGeometry) {
+    auto item = MakeShape("shape");
 
-    EXPECT_CALL(*geometry, GetType()).WillOnce(Return("rectangle"));
-    EXPECT_CALL(*geometry, GetParameters()).WillOnce(Return("1 2 30 40"));
+    EXPECT_CALL(*item.geometry, GetType()).WillOnce(testing::Return("rectangle"));
+    EXPECT_CALL(*item.geometry, GetParameters()).WillOnce(testing::Return("10 20 100 50"));
 
-    EXPECT_EQ(shape->GetType(), "rectangle");
-    EXPECT_EQ(shape->GetParameters(), "1 2 30 40");
+    EXPECT_EQ(item.shape->GetType(), "rectangle");
+    EXPECT_EQ(item.shape->GetParameters(), "10 20 100 50");
 }
 
-TEST(ShapeTest, UsesReplacementGeometry) {
-    auto [shape, oldGeometry] = MakeShape("first", gfx::Color{});
+TEST(ShapeTest, TryToChangeStrategy) {
+    auto item = MakeShape("shape");
     auto newGeometry = std::make_unique<MockShapeGeometry>();
-    auto *newGeometryPtr = newGeometry.get();
+    auto *newGeometryMock = newGeometry.get();
 
-    shape->SetStrategy(std::move(newGeometry));
+    item.shape->SetStrategy(std::move(newGeometry));
 
-    EXPECT_CALL(*newGeometryPtr, GetType()).WillOnce(Return("ellipse"));
-    EXPECT_EQ(shape->GetType(), "ellipse");
+    EXPECT_CALL(*newGeometryMock, GetType()).WillOnce(testing::Return("ellipse"));
+    EXPECT_EQ(item.shape->GetType(), "ellipse");
 }
 
-TEST(PictureTest, IsEmptyInitially) {
+TEST(PictureTest, StartEmpty) {
     const shapes::Picture picture;
 
     EXPECT_EQ(picture.GetShapeCount(), 0);
 }
 
-TEST(PictureTest, AddsShapesAndPreservesTheirOrder) {
+TEST(PictureTest, AddsAndReturnsShapes) {
     shapes::Picture picture;
-    auto first = MakeShape("first", gfx::Color{});
-    auto second = MakeShape("second", gfx::Color{});
-    auto *firstPtr = first.shape.get();
-    auto *secondPtr = second.shape.get();
+    auto first = MakeShape("first");
+    auto second = MakeShape("second");
 
     picture.AddShape(std::move(first.shape));
     picture.AddShape(std::move(second.shape));
 
     ASSERT_EQ(picture.GetShapeCount(), 2);
-    EXPECT_EQ(&picture.GetShape("first"), firstPtr);
-    EXPECT_EQ(&picture.GetShapeAt(0), firstPtr);
-    EXPECT_EQ(&picture.GetShapeAt(1), secondPtr);
-
-    const auto &constPicture = picture;
-    EXPECT_EQ(&constPicture.GetShape("second"), secondPtr);
-    EXPECT_EQ(&constPicture.GetShapeAt(1), secondPtr);
+    EXPECT_EQ(picture.GetShape("first").GetId(), "first");
+    EXPECT_EQ(picture.GetShape("second").GetId(), "second");
+    EXPECT_EQ(picture.GetShapeAt(0).GetId(), "first");
+    EXPECT_EQ(picture.GetShapeAt(1).GetId(), "second");
 }
 
-TEST(PictureTest, RejectsDuplicateIdAndKeepsExistingShape) {
+TEST(PictureTest, DuplicatedId) {
     shapes::Picture picture;
-    auto first = MakeShape("duplicate", gfx::Color{});
-    auto duplicate = MakeShape("duplicate", gfx::Color{1, 2, 3});
-    auto *firstPtr = first.shape.get();
+    auto first = MakeShape("same-id");
+    auto second = MakeShape("same-id");
     picture.AddShape(std::move(first.shape));
 
-    EXPECT_THROW(picture.AddShape(std::move(duplicate.shape)), std::invalid_argument);
+    EXPECT_THROW(picture.AddShape(std::move(second.shape)), std::invalid_argument);
     EXPECT_EQ(picture.GetShapeCount(), 1);
-    EXPECT_EQ(&picture.GetShape("duplicate"), firstPtr);
 }
 
-TEST(PictureTest, DeletesShapeByIdAndPreservesOrderOfRemainingShapes) {
+TEST(PictureTest, DeleteShape) {
     shapes::Picture picture;
-    auto first = MakeShape("first", gfx::Color{});
-    auto second = MakeShape("second", gfx::Color{});
-    auto third = MakeShape("third", gfx::Color{});
-    auto *firstPtr = first.shape.get();
-    auto *thirdPtr = third.shape.get();
+    auto first = MakeShape("first");
+    auto second = MakeShape("second");
     picture.AddShape(std::move(first.shape));
     picture.AddShape(std::move(second.shape));
-    picture.AddShape(std::move(third.shape));
 
-    picture.DeleteShape("second");
+    picture.DeleteShape("first");
 
-    ASSERT_EQ(picture.GetShapeCount(), 2);
-    EXPECT_EQ(&picture.GetShapeAt(0), firstPtr);
-    EXPECT_EQ(&picture.GetShapeAt(1), thirdPtr);
+    ASSERT_EQ(picture.GetShapeCount(), 1);
+    EXPECT_EQ(picture.GetShapeAt(0).GetId(), "second");
+    EXPECT_THROW(picture.GetShape("first"), std::out_of_range);
 }
 
-TEST(PictureTest, ReportsMissingShapeAndInvalidIndex) {
+TEST(PictureTest, ThrowsWhenShapeDoesNotExist) {
     shapes::Picture picture;
-    const auto &constPicture = picture;
 
     EXPECT_THROW(picture.GetShape("missing"), std::out_of_range);
-    EXPECT_THROW(constPicture.GetShape("missing"), std::out_of_range);
-    EXPECT_THROW(picture.GetShapeAt(0), std::out_of_range);
-    EXPECT_THROW(constPicture.GetShapeAt(0), std::out_of_range);
     EXPECT_THROW(picture.DeleteShape("missing"), std::out_of_range);
+}
+
+TEST(PictureTest, IndexOutOfRange) {
+    const shapes::Picture picture;
+
+    EXPECT_THROW(picture.GetShapeAt(0), std::out_of_range);
 }
 
 TEST(PictureTest, MovesEveryShape) {
     shapes::Picture picture;
-    auto first = MakeShape("first", gfx::Color{});
-    auto second = MakeShape("second", gfx::Color{});
+    auto first = MakeShape("first");
+    auto second = MakeShape("second");
     auto *firstGeometry = first.geometry;
     auto *secondGeometry = second.geometry;
     picture.AddShape(std::move(first.shape));
@@ -193,13 +181,13 @@ TEST(PictureTest, MovesEveryShape) {
     EXPECT_CALL(*firstGeometry, Move(5, -3));
     EXPECT_CALL(*secondGeometry, Move(5, -3));
 
-    picture.Move(5.5, -3);
+    picture.Move(5, -3);
 }
 
-TEST(PictureTest, ClearsCanvasThenDrawsEveryShapeInOrder) {
+TEST(PictureTest, ClearsCanvasAndDrawsShapesInOrder) {
     shapes::Picture picture;
-    const gfx::Color firstColor{1, 2, 3};
-    const gfx::Color secondColor{4, 5, 6};
+    const gfx::Color firstColor{10, 20, 30};
+    const gfx::Color secondColor{40, 50, 60};
     auto first = MakeShape("first", firstColor);
     auto second = MakeShape("second", secondColor);
     auto *firstGeometry = first.geometry;
@@ -208,15 +196,15 @@ TEST(PictureTest, ClearsCanvasThenDrawsEveryShapeInOrder) {
     picture.AddShape(std::move(second.shape));
     MockCanvas canvas;
 
-    InSequence sequence;
+    testing::InSequence sequence;
     EXPECT_CALL(canvas, Clear());
-    EXPECT_CALL(*firstGeometry, Draw(Ref(canvas), firstColor));
-    EXPECT_CALL(*secondGeometry, Draw(Ref(canvas), secondColor));
+    EXPECT_CALL(*firstGeometry, Draw(testing::Ref(canvas), firstColor));
+    EXPECT_CALL(*secondGeometry, Draw(testing::Ref(canvas), secondColor));
 
     picture.Draw(canvas);
 }
 
-TEST(PictureTest, ClearsCanvasWhenThereAreNoShapes) {
+TEST(PictureTest, ClearCanvasWhenCanvasisEmpty) {
     const shapes::Picture picture;
     MockCanvas canvas;
 

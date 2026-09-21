@@ -2,7 +2,7 @@
 #include "../Picture/Picture.h"
 
 namespace shapes::observer {
-    class PictureObserver final : public IObserver<shapes::Picture> {
+    class PictureObserver : public IObserver<shapes::Picture> {
     public:
         explicit PictureObserver(std::ostream &output) : m_output(output) {}
 

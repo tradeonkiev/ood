@@ -4,6 +4,7 @@
 #include "../lib/Duck/FunctionalDuck/RedheadDuck.h"
 #include "../lib/Duck/FunctionalDuck/RubberDuck.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <functional>
@@ -69,14 +70,17 @@ TEST(FunctionalDuckTest, QuacksAfterEverySecondFlight) {
 }
 
 TEST(FunctionalDuckTest, DoesNotQuackWhenItCannotFly) {
-    unsigned quackCount = 0;
-    TestFunctionalDuck duck([] { return 0; }, [&quackCount] { ++quackCount; }, [] {});
+    testing::MockFunction<unsigned()> flyBehavior;
+    testing::MockFunction<void()> quackBehavior;
+    TestFunctionalDuck duck(flyBehavior.AsStdFunction(), quackBehavior.AsStdFunction(), [] {});
+
+    EXPECT_CALL(flyBehavior, Call()).Times(2).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(quackBehavior, Call()).Times(0);
 
     duck.Fly();
     duck.Fly();
 
     EXPECT_EQ(duck.GetFlightCount(), 0);
-    EXPECT_EQ(quackCount, 0);
 }
 
 TEST(FunctionalDuckTest, ResetsFlightCountWhenFlyBehaviorChanges) {

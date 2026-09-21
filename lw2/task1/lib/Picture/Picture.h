@@ -14,7 +14,7 @@ namespace shapes {
     class Picture : public observer::IObserver<Shape>, public observer::Observable<Picture> {
     public:
         void AddShape(std::unique_ptr<Shape> shape);
-        void DeleteShape(const std::string &id);
+        std::unique_ptr<Shape> DeleteShape(const std::string &id);
         void Move(double dx, double dy);
         void Draw(gfx::ICanvas &canvas) const;
         Shape &GetShape(const std::string &id);
