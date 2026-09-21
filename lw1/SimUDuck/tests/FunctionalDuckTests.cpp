@@ -69,7 +69,7 @@ TEST(FunctionalDuckTest, QuacksAfterEverySecondFlight) {
     EXPECT_EQ(quackCount, 2);
 }
 
-TEST(FunctionalDuckTest, DoesNotQuackWhenItCannotFly) {
+TEST(FunctionalDuckTest, NoQuackNoFly) {
     testing::MockFunction<unsigned()> flyBehavior;
     testing::MockFunction<void()> quackBehavior;
     TestFunctionalDuck duck(flyBehavior.AsStdFunction(), quackBehavior.AsStdFunction(), [] {});

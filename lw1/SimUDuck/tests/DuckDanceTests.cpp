@@ -78,7 +78,7 @@ TEST(DuckDanceTest, CallsDance) {
     duck.Fly();
 }
 
-TEST(DuckTest, DoesNotQuackWhenItCannotFly) {
+TEST(DuckTest, NoQuackNoFly) {
     auto flightBehavior = std::make_unique<MockFlyBehavior>();
     auto quackBehavior = std::make_unique<MockQuackBehavior>();
     auto *flightMock = flightBehavior.get();
