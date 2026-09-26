@@ -68,7 +68,7 @@ TEST(ShapeTest, TryToColorDraw) {
     auto item = MakeShape("shape", color);
     MockCanvas canvas;
 
-    EXPECT_CALL(*item.geometry, Draw(canvas, color));
+    EXPECT_CALL(*item.geometry, Draw(testing::Ref(canvas), color));
 
     item.shape->Draw(canvas);
 }

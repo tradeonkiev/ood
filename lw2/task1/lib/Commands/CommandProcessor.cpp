@@ -123,6 +123,7 @@ void CommandProcessor::Execute(const std::string &commandLine) {
                   << "DrawPicture" << std::endl
                   << "---------------------------" << std::endl
                   << "List" << std::endl
+                  << "===========================" << std::endl
                   << std::endl;
         return;
     }

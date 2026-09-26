@@ -10,10 +10,12 @@ namespace shapes::observer {
         bool RegisterObserver(IObserver<Subject> &observer) {
             if (std::find(m_observers.begin(), m_observers.end(), &observer) != m_observers.end()) {
                 return false;
+                // TODO: throw std::invalid_argument("Observer is already registered");
             }
             m_observers.push_back(&observer);
             return true;
         };
+        
         bool RemoveObserver(IObserver<Subject> &observer) {
             auto it = std::find(m_observers.begin(), m_observers.end(), &observer);
             if (it != m_observers.end()) {
