@@ -22,7 +22,7 @@ namespace shapes {
         }
 
         shapePtr->RegisterObserver(*this);
-        NotifyObservers(*this);
+        NotifyObservers();
     }
 
     std::unique_ptr<Shape> Picture::DeleteShape(const std::string &id) {
@@ -41,7 +41,7 @@ namespace shapes {
         m_shapes.erase(orderedShape);
         m_shapesById.erase(indexedShape);
 
-        NotifyObservers(*this);
+        NotifyObservers();
         return removedShape;
     }
 
@@ -96,6 +96,6 @@ namespace shapes {
     }
 
 
-    void Picture::Update(const Shape &) { NotifyObservers(*this); }
+    void Picture::Update() { NotifyObservers(); }
 
 } // namespace shapes

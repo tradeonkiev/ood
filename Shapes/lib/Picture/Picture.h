@@ -22,7 +22,7 @@ namespace shapes {
         const Shape &GetShapeAt(std::size_t index) const;
         std::size_t GetShapeCount() const noexcept;
 
-        void Update(const Shape &shape) override;
+        void Update() override;
 
     private:
         Shape *FindShape(const std::string &id) noexcept;

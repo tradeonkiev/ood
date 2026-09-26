@@ -14,7 +14,7 @@ namespace {
     template<typename Subject>
     class CountingObserver : public shapes::observer::IObserver<Subject> {
     public:
-        void Update(const Subject &) override { ++m_updateCount; }
+        void Update() override { ++m_updateCount; }
 
         unsigned GetUpdateCount() const { return m_updateCount; }
         void Reset() { m_updateCount = 0; }
@@ -143,8 +143,8 @@ TEST(ObserverTest, RegisteringSameObserverTwiceDoesNotDuplicateNotifications) {
     auto shape = MakeShape("shape");
     CountingObserver<shapes::Shape> observer;
 
-    EXPECT_TRUE(shape->RegisterObserver(observer));
-    EXPECT_FALSE(shape->RegisterObserver(observer));
+    EXPECT_NO_THROW(shape->RegisterObserver(observer));
+    EXPECT_THROW(shape->RegisterObserver(observer), std::invalid_argument);
 
     shape->SetColor({10, 20, 30});
 

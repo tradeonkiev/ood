@@ -17,7 +17,7 @@ namespace shapes {
     void Shape::SetColor(gfx::Color color) {
         m_color = color;
 
-        NotifyObservers(*this);
+        NotifyObservers();
     }
 
     void Shape::Draw(gfx::ICanvas &canvas) const { m_strategy->Draw(canvas, m_color); }
@@ -25,7 +25,7 @@ namespace shapes {
     void Shape::Move(int dx, int dy) {
         m_strategy->Move(dx, dy);
 
-        NotifyObservers(*this);
+        NotifyObservers();
     }
 
     Rect Shape::GetBounds() const { return m_strategy->GetBounds(); }
@@ -36,13 +36,13 @@ namespace shapes {
 
     void Shape::SetBounds(const Rect &bounds) {
         m_strategy->SetBounds(bounds);
-        NotifyObservers(*this);
+        NotifyObservers();
     }
 
     void Shape::SetStrategy(std::unique_ptr<IShapeGeometry> strategy) {
         assert(strategy);
         m_strategy = std::move(strategy);
 
-        NotifyObservers(*this);
+        NotifyObservers();
     }
 } // namespace shapes

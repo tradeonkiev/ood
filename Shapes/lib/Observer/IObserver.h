@@ -5,6 +5,6 @@ namespace shapes::observer {
     class IObserver {
     public:
         virtual ~IObserver() = default;
-        virtual void Update(const Subject &subject) = 0;
+        virtual void Update() = 0;
     };
 } // namespace shapes::observer

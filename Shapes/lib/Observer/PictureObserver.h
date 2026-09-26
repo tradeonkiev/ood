@@ -4,13 +4,12 @@
 namespace shapes::observer {
     class PictureObserver : public IObserver<shapes::Picture> {
     public:
-        explicit PictureObserver(std::ostream &output) : m_output(output) {}
+        explicit PictureObserver(std::ostream &output, const Picture &picture) : m_output(output), m_picture(picture) {}
 
-        void Update(const Picture &picture) override {
-            m_output << "Picture changed. Shapes: " << picture.GetShapeCount() << '\n';
-        }
+        void Update() override { m_output << "Picture changed. Shapes: " << m_picture.GetShapeCount() << '\n'; }
 
     private:
         std::ostream &m_output;
+        const Picture &m_picture;
     };
 } // namespace shapes::observer
