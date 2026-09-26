@@ -8,6 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(CTest)
 
-add_subdirectory(lw1/SimUDuck)
-add_subdirectory(lw1/Shapes)
-add_subdirectory(lw2/task1)
+add_subdirectory(Shapes)
+
+
+
