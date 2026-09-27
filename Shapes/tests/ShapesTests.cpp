@@ -5,12 +5,38 @@
 
 #include <gtest/gtest.h>
 
+#include <functional>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace {
+    using Logs = std::vector<std::string>;
+
+    template<typename Subject>
+    class LoggingObserver : public shapes::observer::IObserver<Subject> {
+    public:
+        LoggingObserver(std::string name, Logs &log) : m_name(std::move(name)), m_log(log) {}
+
+        void SetOnceAction(std::function<void()> action) { m_action = std::move(action); }
+
+        void Update() override {
+            m_log.push_back(m_name);
+            if (m_action) {
+                auto action = std::move(m_action);
+                m_action = nullptr;
+                action();
+            }
+        }
+
+    private:
+        std::string m_name;
+        Logs &m_log;
+        std::function<void()> m_action;
+    };
+
     template<typename Subject>
     class CountingObserver : public shapes::observer::IObserver<Subject> {
     public:
@@ -43,7 +69,21 @@ namespace {
 
     std::unique_ptr<shapes::Shape> MakeShape(std::string id) {
         return std::make_unique<shapes::Shape>(std::move(id), gfx::Color{}, std::make_unique<StubShapeGeometry>());
-    }
+    };
+
+    class SubscriptionShapeFixture : public ::testing::Test {
+    protected:
+        void SetUp() override {
+            shape = MakeShape("shape");
+            shape->RegisterObserver(a);
+            shape->RegisterObserver(b);
+            shape->RegisterObserver(c);
+        }
+
+        std::unique_ptr<shapes::Shape> shape;
+        Logs log;
+        LoggingObserver<shapes::Shape> a{"A", log}, b{"B", log}, c{"C", log};
+    };
 } // namespace
 
 TEST(ObserverTest, NotifyAfterChange) {
@@ -162,4 +202,75 @@ TEST(ObserverTest, FailedOperationDoesNotNotifyPictureObserver) {
 
     EXPECT_EQ(picture.GetShapeCount(), 1);
     EXPECT_EQ(observer.GetUpdateCount(), 0);
+}
+
+TEST_F(SubscriptionShapeFixture, UnsubscribeYourselfDuringNotification) {
+    b.SetOnceAction([&] { shape->RemoveObserver(b); });
+
+    shape->Move(0, 0);
+    EXPECT_EQ(log, (Logs{"A", "B", "C"}));
+
+    log.clear();
+    shape->Move(0, 0);
+    EXPECT_EQ(log, (Logs{"A", "C"}));
+}
+
+TEST_F(SubscriptionShapeFixture, ObserverAUnscribesObserverBDuringNotification) {
+    a.SetOnceAction([&] { shape->RemoveObserver(b); });
+
+    shape->Move(0, 0);
+
+    EXPECT_EQ(log, (Logs{"A", "C"}));
+}
+
+TEST_F(SubscriptionShapeFixture, UnsubscrideOneObserverDosntAffectOtherObservers) {
+    b.SetOnceAction([&] { shape->RemoveObserver(c); });
+
+    shape->Move(0, 0);
+    EXPECT_EQ(log, (Logs{"A", "B"}));
+
+    log.clear();
+    shape->Move(0, 0);
+    EXPECT_EQ(log, (Logs{"A", "B"}));
+}
+
+// ObserverRegisteredDuringNotificationReceives
+TEST_F(SubscriptionShapeFixture, ObserverRegisteredDuringNotification) {
+    shape->RemoveObserver(c);
+    a.SetOnceAction([&] { shape->RegisterObserver(c); });
+
+    shape->Move(0, 0);
+    EXPECT_EQ(log, (Logs{"A", "B"}));
+
+    log.clear();
+    shape->Move(0, 0);
+    EXPECT_EQ(log, (Logs{"A", "B", "C"}));
+}
+
+TEST_F(SubscriptionShapeFixture, ObserverChangePositionInNotification) {
+    b.SetOnceAction([&] {
+        shape->RemoveObserver(b);
+        shape->RegisterObserver(b);
+    });
+
+    shape->Move(0, 0);
+    EXPECT_EQ(log, (Logs{"A", "B", "C"}));
+
+    log.clear();
+    shape->Move(0, 0);
+    EXPECT_EQ(log, (Logs{"A", "C", "B"}));
+}
+
+TEST_F(SubscriptionShapeFixture, Observer2RegisteredDuringNotificationReceives) {
+    a.SetOnceAction([&] {
+        shape->RemoveObserver(b);
+        shape->RegisterObserver(b);
+    });
+
+    shape->Move(0, 0);
+    EXPECT_EQ(log, (Logs{"A", "C"}));
+
+    log.clear();
+    shape->Move(0, 0);
+    EXPECT_EQ(log, (Logs{"A", "C", "B"}));
 }
