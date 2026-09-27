@@ -29,6 +29,7 @@ namespace shapes {
         const Shape *FindShape(const std::string &id) const noexcept;
         std::vector<std::unique_ptr<Shape>> m_shapes;
         std::unordered_map<std::string, Shape *> m_shapesById;
+        std::unordered_map<std::string, observer::Subscription> m_shapeSubscriptions;
     };
 
 } // namespace shapes

@@ -75,15 +75,30 @@ namespace {
     protected:
         void SetUp() override {
             shape = MakeShape("shape");
-            shape->RegisterObserver(a);
-            shape->RegisterObserver(b);
-            shape->RegisterObserver(c);
+            subA = shape->Subscribe(a);
+            subB = shape->Subscribe(b);
+            subC = shape->Subscribe(c);
         }
 
         std::unique_ptr<shapes::Shape> shape;
         Logs log;
         LoggingObserver<shapes::Shape> a{"A", log}, b{"B", log}, c{"C", log};
+        shapes::observer::Subscription subA, subB, subC;
     };
+
+    // class SubscriptionShapeFixture : public ::testing::Test {
+    // protected:
+    //     void SetUp() override {
+    //         shape = MakeShape("shape");
+    //         shape->RegisterObserver(a);
+    //         shape->RegisterObserver(b);
+    //         shape->RegisterObserver(c);
+    //     }
+
+    //     std::unique_ptr<shapes::Shape> shape;
+    //     Logs log;
+    //     LoggingObserver<shapes::Shape> a{"A", log}, b{"B", log}, c{"C", log};
+    // };
 } // namespace
 
 TEST(ObserverTest, NotifyAfterChange) {
@@ -205,7 +220,7 @@ TEST(ObserverTest, FailedOperationDoesNotNotifyPictureObserver) {
 }
 
 TEST_F(SubscriptionShapeFixture, UnsubscribeYourselfDuringNotification) {
-    b.SetOnceAction([&] { shape->RemoveObserver(b); });
+    b.SetOnceAction([&] { subB.Disconnect(); });
 
     shape->Move(0, 0);
     EXPECT_EQ(log, (Logs{"A", "B", "C"}));
@@ -216,15 +231,15 @@ TEST_F(SubscriptionShapeFixture, UnsubscribeYourselfDuringNotification) {
 }
 
 TEST_F(SubscriptionShapeFixture, ObserverAUnscribesObserverBDuringNotification) {
-    a.SetOnceAction([&] { shape->RemoveObserver(b); });
+    a.SetOnceAction([&] { subB.Disconnect(); });
 
     shape->Move(0, 0);
 
     EXPECT_EQ(log, (Logs{"A", "C"}));
 }
 
-TEST_F(SubscriptionShapeFixture, UnsubscrideOneObserverDosntAffectOtherObservers) {
-    b.SetOnceAction([&] { shape->RemoveObserver(c); });
+TEST_F(SubscriptionShapeFixture, UnsubscribeOneObserverDosntAffectOtherObservers) {
+    b.SetOnceAction([&] { subC.Disconnect(); });
 
     shape->Move(0, 0);
     EXPECT_EQ(log, (Logs{"A", "B"}));
@@ -237,7 +252,7 @@ TEST_F(SubscriptionShapeFixture, UnsubscrideOneObserverDosntAffectOtherObservers
 // ObserverRegisteredDuringNotificationReceives
 TEST_F(SubscriptionShapeFixture, ObserverRegisteredDuringNotification) {
     shape->RemoveObserver(c);
-    a.SetOnceAction([&] { shape->RegisterObserver(c); });
+    a.SetOnceAction([&] { subC = shape->Subscribe(c); });
 
     shape->Move(0, 0);
     EXPECT_EQ(log, (Logs{"A", "B"}));
@@ -249,8 +264,8 @@ TEST_F(SubscriptionShapeFixture, ObserverRegisteredDuringNotification) {
 
 TEST_F(SubscriptionShapeFixture, ObserverChangePositionInNotification) {
     b.SetOnceAction([&] {
-        shape->RemoveObserver(b);
-        shape->RegisterObserver(b);
+        subB.Disconnect();
+        subB = shape->Subscribe(b);
     });
 
     shape->Move(0, 0);
@@ -263,8 +278,8 @@ TEST_F(SubscriptionShapeFixture, ObserverChangePositionInNotification) {
 
 TEST_F(SubscriptionShapeFixture, Observer2RegisteredDuringNotificationReceives) {
     a.SetOnceAction([&] {
-        shape->RemoveObserver(b);
-        shape->RegisterObserver(b);
+        subB.Disconnect();
+        subB = shape->Subscribe(b);
     });
 
     shape->Move(0, 0);

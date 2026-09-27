@@ -13,15 +13,17 @@ namespace shapes {
         }
 
         Shape *shapePtr = shape.get();
+        auto subscription = shapePtr->Subscribe(*this);
         m_shapes.push_back(std::move(shape));
         try {
             m_shapesById.emplace(id, shapePtr);
+            m_shapeSubscriptions.emplace(id, std::move(subscription));
         } catch (...) {
+            m_shapesById.erase(id);
             m_shapes.pop_back();
             throw;
         }
 
-        shapePtr->RegisterObserver(*this);
         NotifyObservers();
     }
 
@@ -35,7 +37,7 @@ namespace shapes {
         const auto orderedShape = std::find_if(m_shapes.begin(), m_shapes.end(),
                                                [shapePtr](const auto &shape) { return shape.get() == shapePtr; });
 
-        shapePtr->RemoveObserver(*this);
+        m_shapeSubscriptions.erase(id);
 
         auto removedShape = std::move(*orderedShape);
         m_shapes.erase(orderedShape);
