@@ -3,6 +3,7 @@
 #include "Shape/Shape.h"
 #include "Strategies/IShapeGeometry.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <functional>
@@ -10,33 +11,8 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-#include <vector>
 
 namespace {
-    using Logs = std::vector<std::string>;
-
-    template<typename Subject>
-    class LoggingObserver : public shapes::observer::IObserver<Subject> {
-    public:
-        LoggingObserver(std::string name, Logs &log) : m_name(std::move(name)), m_log(log) {}
-
-        void SetOnceAction(std::function<void()> action) { m_action = std::move(action); }
-
-        void Update() override {
-            m_log.push_back(m_name);
-            if (m_action) {
-                auto action = std::move(m_action);
-                m_action = nullptr;
-                action();
-            }
-        }
-
-    private:
-        std::string m_name;
-        Logs &m_log;
-        std::function<void()> m_action;
-    };
-
     template<typename Subject>
     class CountingObserver : public shapes::observer::IObserver<Subject> {
     public:
@@ -71,7 +47,13 @@ namespace {
         return std::make_unique<shapes::Shape>(std::move(id), gfx::Color{}, std::make_unique<StubShapeGeometry>());
     };
 
-    class SubscriptionShapeFixture : public ::testing::Test {
+    template<typename Subject>
+    class MockObserver : public shapes::observer::IObserver<Subject> {
+    public:
+        MOCK_METHOD(void, Update, (), (override));
+    };
+
+    class ABCCreateFixture : public ::testing::Test {
     protected:
         void SetUp() override {
             shape = MakeShape("shape");
@@ -81,24 +63,9 @@ namespace {
         }
 
         std::unique_ptr<shapes::Shape> shape;
-        Logs log;
-        LoggingObserver<shapes::Shape> a{"A", log}, b{"B", log}, c{"C", log};
+        ::testing::StrictMock<MockObserver<shapes::Shape>> a, b, c;
         shapes::observer::Subscription subA, subB, subC;
     };
-
-    // class SubscriptionShapeFixture : public ::testing::Test {
-    // protected:
-    //     void SetUp() override {
-    //         shape = MakeShape("shape");
-    //         shape->RegisterObserver(a);
-    //         shape->RegisterObserver(b);
-    //         shape->RegisterObserver(c);
-    //     }
-
-    //     std::unique_ptr<shapes::Shape> shape;
-    //     Logs log;
-    //     LoggingObserver<shapes::Shape> a{"A", log}, b{"B", log}, c{"C", log};
-    // };
 } // namespace
 
 TEST(ObserverTest, NotifyAfterChange) {
@@ -219,73 +186,83 @@ TEST(ObserverTest, FailedOperationDoesNotNotifyPictureObserver) {
     EXPECT_EQ(observer.GetUpdateCount(), 0);
 }
 
-TEST_F(SubscriptionShapeFixture, UnsubscribeYourselfDuringNotification) {
-    b.SetOnceAction([&] { subB.Disconnect(); });
+TEST_F(ABCCreateFixture, UnsubscribeYourselfDuringNotification) {
+    ::testing::InSequence seq;
+    EXPECT_CALL(a, Update()).WillOnce([&] { subA.Disconnect(); });
+    EXPECT_CALL(b, Update());
+    EXPECT_CALL(c, Update());
+
+    EXPECT_CALL(b, Update());
+    EXPECT_CALL(c, Update());
 
     shape->Move(0, 0);
-    EXPECT_EQ(log, (Logs{"A", "B", "C"}));
-
-    log.clear();
     shape->Move(0, 0);
-    EXPECT_EQ(log, (Logs{"A", "C"}));
 }
 
-TEST_F(SubscriptionShapeFixture, ObserverAUnscribesObserverBDuringNotification) {
-    a.SetOnceAction([&] { subB.Disconnect(); });
+TEST_F(ABCCreateFixture, ObserverAUnsubscribesObserverBDuringNotification) {
+    ::testing::InSequence seq;
+    EXPECT_CALL(a, Update()).WillOnce([&] { subB.Disconnect(); });
+    EXPECT_CALL(c, Update());
 
     shape->Move(0, 0);
-
-    EXPECT_EQ(log, (Logs{"A", "C"}));
 }
 
-TEST_F(SubscriptionShapeFixture, UnsubscribeOneObserverDosntAffectOtherObservers) {
-    b.SetOnceAction([&] { subC.Disconnect(); });
+TEST_F(ABCCreateFixture, UnsubscribeOneObserverDosntAffectOtherObservers) {
+    ::testing::InSequence seq;
+    EXPECT_CALL(a, Update());
+    EXPECT_CALL(b, Update()).WillOnce([&] { subC.Disconnect(); });
+
+    EXPECT_CALL(a, Update());
+    EXPECT_CALL(b, Update());
 
     shape->Move(0, 0);
-    EXPECT_EQ(log, (Logs{"A", "B"}));
-
-    log.clear();
     shape->Move(0, 0);
-    EXPECT_EQ(log, (Logs{"A", "B"}));
 }
 
-// ObserverRegisteredDuringNotificationReceives
-TEST_F(SubscriptionShapeFixture, ObserverRegisteredDuringNotification) {
+TEST_F(ABCCreateFixture, ObserverRegisteredDuringNotification) {
     shape->RemoveObserver(c);
-    a.SetOnceAction([&] { subC = shape->Subscribe(c); });
+
+    ::testing::InSequence seq;
+    EXPECT_CALL(a, Update()).WillOnce([&] { subC = shape->Subscribe(c); });
+    EXPECT_CALL(b, Update());
+
+    EXPECT_CALL(a, Update());
+    EXPECT_CALL(b, Update());
+    EXPECT_CALL(c, Update());
 
     shape->Move(0, 0);
-    EXPECT_EQ(log, (Logs{"A", "B"}));
-
-    log.clear();
     shape->Move(0, 0);
-    EXPECT_EQ(log, (Logs{"A", "B", "C"}));
 }
 
-TEST_F(SubscriptionShapeFixture, ObserverChangePositionInNotification) {
-    b.SetOnceAction([&] {
+TEST_F(ABCCreateFixture, ObserverChangePositionInNotification) {
+    ::testing::InSequence seq;
+    EXPECT_CALL(a, Update());
+    EXPECT_CALL(b, Update()).WillOnce([&] {
         subB.Disconnect();
         subB = shape->Subscribe(b);
     });
+    EXPECT_CALL(c, Update());
+
+    EXPECT_CALL(a, Update());
+    EXPECT_CALL(c, Update());
+    EXPECT_CALL(b, Update());
 
     shape->Move(0, 0);
-    EXPECT_EQ(log, (Logs{"A", "B", "C"}));
-
-    log.clear();
     shape->Move(0, 0);
-    EXPECT_EQ(log, (Logs{"A", "C", "B"}));
 }
 
-TEST_F(SubscriptionShapeFixture, Observer2RegisteredDuringNotificationReceives) {
-    a.SetOnceAction([&] {
+TEST_F(ABCCreateFixture, Observer2RegisteredDuringNotificationReceives) {
+    ::testing::InSequence seq;
+    EXPECT_CALL(a, Update()).WillOnce([&] {
         subB.Disconnect();
         subB = shape->Subscribe(b);
     });
+    EXPECT_CALL(c, Update());
+
+    EXPECT_CALL(a, Update());
+    EXPECT_CALL(c, Update());
+    EXPECT_CALL(b, Update());
 
     shape->Move(0, 0);
-    EXPECT_EQ(log, (Logs{"A", "C"}));
-
-    log.clear();
     shape->Move(0, 0);
-    EXPECT_EQ(log, (Logs{"A", "C", "B"}));
 }
