@@ -30,9 +30,9 @@ if (BUILD_TESTING)
         FetchContent_MakeAvailable(googletest)
     endif ()
 
-    # add_executable(lw2_events_tts estests/ShapesTests.cpp)
-    # target_link_libraries(lw2_events_tests PRIVATE events_lib GTest::gmock_main)
+    add_executable(lw2_events_tests tests/PictureEventsTests.cpp)
+    target_link_libraries(lw2_events_tests PRIVATE events_lib GTest::gmock_main)
 
-    # include(GoogleTest)
-    # gtest_discover_tests(lw2_events_tests)
+    include(GoogleTest)
+    gtest_discover_tests(lw2_events_tests)
 endif ()
