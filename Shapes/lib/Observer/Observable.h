@@ -14,12 +14,10 @@ namespace shapes::observer {
         Observable() = default;
 
         Subscription Subscribe(IObserver<Subject> &observer) {
-            const int id = AddObserver(observer);
-
-            std::weak_ptr<Observers> opserverPtr = m_observers;
-            return Subscription([opserverPtr, id] {
-                if (auto observers = opserverPtr.lock()) {
-                    observers->erase(id);
+            std::weak_ptr<bool> connected = AddObserver(observer);
+            return Subscription([connected] {
+                if (auto flag = connected.lock()) {
+                    *flag = false;
                 }
             });
         };
@@ -28,44 +26,58 @@ namespace shapes::observer {
 
         void RemoveObserver(IObserver<Subject> &observer) {
             auto it = FindObserver(observer);
-            if (it == m_observers->end()) {
+            if (it == m_observers.end()) {
                 throw std::invalid_argument("Observer is not registered");
             }
 
-            m_observers->erase(it);
+            *it->second.connected = false;
+            m_observers.erase(it);
         };
 
     protected:
         void NotifyObservers() {
             const int lastId = m_nextId;
 
-            auto it = m_observers->begin();
-            while (it != m_observers->end() && it->first < lastId) {
+            auto it = m_observers.begin();
+            while (it != m_observers.end() && it->first < lastId) {
+                if (!*it->second.connected) {
+                    it = m_observers.erase(it);
+                    continue;
+                }
+
                 int id = it->first;
-                it->second->Update();
-                it = m_observers->upper_bound(id);
+                it->second.observer->Update();
+                it = m_observers.upper_bound(id);
             }
         };
 
     private:
-        using Observers = std::map<int, IObserver<Subject> *>;
+        struct Observer {
+            IObserver<Subject> *observer;
+            std::shared_ptr<bool> connected;
+        };
 
-        int AddObserver(IObserver<Subject> &observer) {
-            if (FindObserver(observer) != m_observers->end()) {
+        using Observers = std::map<int, Observer>;
+
+        std::shared_ptr<bool> AddObserver(IObserver<Subject> &observer) {
+            std::erase_if(m_observers, [](const auto &item) { return !*item.second.connected; });
+
+            if (FindObserver(observer) != m_observers.end()) {
                 throw std::invalid_argument("Observer is already registered");
             }
 
-            const int id = m_nextId++;
-            m_observers->emplace(id, &observer);
-            return id;
+            auto connected = std::make_shared<bool>(true);
+            m_observers.emplace(m_nextId++, Observer{&observer, connected});
+            return connected;
         }
 
         typename Observers::iterator FindObserver(IObserver<Subject> &observer) {
-            return std::find_if(m_observers->begin(), m_observers->end(),
-                                [&observer](const auto &object) { return object.second == &observer; });
+            return std::find_if(m_observers.begin(), m_observers.end(), [&observer](const auto &item) {
+                return item.second.observer == &observer && *item.second.connected;
+            });
         }
 
-        std::shared_ptr<Observers> m_observers = std::make_shared<Observers>();
+        Observers m_observers;
         int m_nextId = 0;
     };
 } // namespace shapes::observer
