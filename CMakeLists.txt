@@ -9,3 +9,4 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(CTest)
 
 add_subdirectory(Shapes)
+add_subdirectory(Events)
