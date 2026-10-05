@@ -48,3 +48,4 @@ std::string TriangleStrategy::GetParameters() const {
            << m_vertices[2].x << ' ' << m_vertices[2].y;
     return output.str();
 }
+    
