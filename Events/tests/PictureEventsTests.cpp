@@ -14,12 +14,7 @@
 namespace {
     using shapes::Picture;
     using shapes::Shape;
-    using shapes::observer::Subscription;
     using ::testing::_;
-    using ::testing::InSequence;
-    using ::testing::MockFunction;
-    using ::testing::Ref;
-    using ::testing::StrictMock;
 
     class StubShapeGeometry : public shapes::IShapeGeometry {
     public:
@@ -52,9 +47,9 @@ namespace {
         MOCK_METHOD(void, OnShapeGeometryChanged, (const Shape &shape));
     };
 
-    using ShapeHandler = MockFunction<void(const Shape &)>;
-    using MovedHandler = MockFunction<void(const Shape &, int, int)>;
-    using ColorHandler = MockFunction<void(const Shape &, gfx::Color, gfx::Color)>;
+    using ShapeHandler = ::testing::MockFunction<void(const Shape &)>;
+    using MovedHandler = ::testing::MockFunction<void(const Shape &, int, int)>;
+    using ColorHandler = ::testing::MockFunction<void(const Shape &, gfx::Color, gfx::Color)>;
 
     class PictureEventsFixture : public ::testing::Test {
     protected:
@@ -75,12 +70,12 @@ namespace {
         Picture picture;
         Shape *shape = nullptr;
 
-        StrictMock<ShapeHandler> added;
-        StrictMock<ShapeHandler> deleted;
-        StrictMock<MovedHandler> moved;
-        StrictMock<ColorHandler> colorChanged;
-        StrictMock<ShapeHandler> geometryChanged;
-        Subscription addedSub, deletedSub, movedSub, colorSub, geometrySub;
+        ::testing::StrictMock<ShapeHandler> added;
+        ::testing::StrictMock<ShapeHandler> deleted;
+        ::testing::StrictMock<MovedHandler> moved;
+        ::testing::StrictMock<ColorHandler> colorChanged;
+        ::testing::StrictMock<ShapeHandler> geometryChanged;
+        shapes::observer::Subscription addedSub, deletedSub, movedSub, colorSub, geometrySub;
     };
 
     class ABCMovedFixture : public ::testing::Test {
@@ -96,14 +91,14 @@ namespace {
 
         Picture picture;
         Shape *shape = nullptr;
-        StrictMock<MovedHandler> a, b, c;
-        Subscription subA, subB, subC;
+        ::testing::StrictMock<MovedHandler> a, b, c;
+        shapes::observer::Subscription subA, subB, subC;
     };
 } // namespace
 
 TEST_F(PictureEventsFixture, Test1ShapeAddedHandlerIsCalledOnAdd) {
     auto newShape = MakeShape("new");
-    EXPECT_CALL(added, Call(Ref(*newShape)));
+    EXPECT_CALL(added, Call(::testing::Ref(*newShape)));
 
     picture.AddShape(std::move(newShape));
 }
@@ -116,7 +111,7 @@ TEST_F(PictureEventsFixture, Test2ShapeAddedHandlerIsNotCalledOnMove) {
 }
 
 TEST_F(PictureEventsFixture, Test3MovedHandlerReceivesShapeAndOffset) {
-    EXPECT_CALL(moved, Call(Ref(*shape), 1, 1));
+    EXPECT_CALL(moved, Call(::testing::Ref(*shape), 1, 1));
 
     shape->Move(1, 1);
 }
@@ -126,16 +121,16 @@ TEST_F(PictureEventsFixture, Test4MovingPictureNotifiesEveryShapeWithOffset) {
     picture.AddShape(MakeShape("second"));
     Shape &second = picture.GetShape("second");
 
-    InSequence seq;
-    EXPECT_CALL(moved, Call(Ref(*shape), 1, 1));
-    EXPECT_CALL(moved, Call(Ref(second), 1, 1));
+    ::testing::InSequence seq;
+    EXPECT_CALL(moved, Call(::testing::Ref(*shape), 1, 1));
+    EXPECT_CALL(moved, Call(::testing::Ref(second), 1, 1));
 
     picture.Move(1, 1);
 }
 
 TEST(PictureEventsTest, Test5OneObjectHandlesSeveralEvents) {
     Picture picture;
-    StrictMock<MockChangeLog> log;
+    ::testing::StrictMock<MockChangeLog> log;
 
     auto addedSub = picture.SubscribeToShapeAdded([&log](const Shape &s) { log.OnShapeAdded(s); });
     auto deletedSub = picture.SubscribeToShapeRemoved([&log](const Shape &s) { log.OnShapeDeleted(s); });
@@ -151,12 +146,12 @@ TEST(PictureEventsTest, Test5OneObjectHandlesSeveralEvents) {
     auto newShape = MakeShape("shape", {1, 2, 3});
     Shape &shape = *newShape;
 
-    InSequence seq;
-    EXPECT_CALL(log, OnShapeAdded(Ref(shape)));
-    EXPECT_CALL(log, OnShapeMoved(Ref(shape), 1, 2));
-    EXPECT_CALL(log, OnShapeColorChanged(Ref(shape), gfx::Color{1, 2, 3}, gfx::Color{4, 5, 6}));
-    EXPECT_CALL(log, OnShapeGeometryChanged(Ref(shape)));
-    EXPECT_CALL(log, OnShapeDeleted(Ref(shape)));
+    ::testing::InSequence seq;
+    EXPECT_CALL(log, OnShapeAdded(::testing::Ref(shape)));
+    EXPECT_CALL(log, OnShapeMoved(::testing::Ref(shape), 1, 2));
+    EXPECT_CALL(log, OnShapeColorChanged(::testing::Ref(shape), gfx::Color{1, 2, 3}, gfx::Color{4, 5, 6}));
+    EXPECT_CALL(log, OnShapeGeometryChanged(::testing::Ref(shape)));
+    EXPECT_CALL(log, OnShapeDeleted(::testing::Ref(shape)));
 
     picture.AddShape(std::move(newShape));
     shape.Move(1, 2);
@@ -166,11 +161,11 @@ TEST(PictureEventsTest, Test5OneObjectHandlesSeveralEvents) {
 }
 
 TEST_F(PictureEventsFixture, SeveralHandlersOnOneEvent) {
-    StrictMock<ColorHandler> second;
+    ::testing::StrictMock<ColorHandler> second;
     auto secondSub = picture.SubscribeToShapeColorChanged(second.AsStdFunction());
 
-    EXPECT_CALL(colorChanged, Call(Ref(*shape), oldColor, newColor));
-    EXPECT_CALL(second, Call(Ref(*shape), oldColor, newColor));
+    EXPECT_CALL(colorChanged, Call(::testing::Ref(*shape), oldColor, newColor));
+    EXPECT_CALL(second, Call(::testing::Ref(*shape), oldColor, newColor));
 
     shape->SetColor(newColor);
 }
@@ -178,8 +173,8 @@ TEST_F(PictureEventsFixture, SeveralHandlersOnOneEvent) {
 TEST_F(PictureEventsFixture, Test6DisconnectingOneEventDoesNotAffectOthers) {
     movedSub.Disconnect();
 
-    EXPECT_CALL(colorChanged, Call(Ref(*shape), oldColor, newColor));
-    EXPECT_CALL(geometryChanged, Call(Ref(*shape)));
+    EXPECT_CALL(colorChanged, Call(::testing::Ref(*shape), oldColor, newColor));
+    EXPECT_CALL(geometryChanged, Call(::testing::Ref(*shape)));
     EXPECT_CALL(added, Call(_));
 
     shape->Move(1, 1);
@@ -190,11 +185,11 @@ TEST_F(PictureEventsFixture, Test6DisconnectingOneEventDoesNotAffectOthers) {
 
 TEST(PictureEventsTest, Test7SubscriptionIsDisconnectedOnDestructionForEveryEvent) {
     Picture picture;
-    StrictMock<ShapeHandler> added;
-    StrictMock<ShapeHandler> deleted;
-    StrictMock<MovedHandler> moved;
-    StrictMock<ColorHandler> colorChanged;
-    StrictMock<ShapeHandler> geometryChanged;
+    ::testing::StrictMock<ShapeHandler> added;
+    ::testing::StrictMock<ShapeHandler> deleted;
+    ::testing::StrictMock<MovedHandler> moved;
+    ::testing::StrictMock<ColorHandler> colorChanged;
+    ::testing::StrictMock<ShapeHandler> geometryChanged;
 
     EXPECT_CALL(added, Call(_));
     EXPECT_CALL(deleted, Call(_));
@@ -225,7 +220,7 @@ TEST(PictureEventsTest, Test7SubscriptionIsDisconnectedOnDestructionForEveryEven
 }
 
 TEST(PictureEventsTest, PictureDestroyedBeforeSubscriptionIsSafe) {
-    Subscription subscription;
+    shapes::observer::Subscription subscription;
     {
         Picture picture;
         subscription = picture.SubscribeToShapeAdded([](const Shape &) {});
@@ -236,7 +231,7 @@ TEST(PictureEventsTest, PictureDestroyedBeforeSubscriptionIsSafe) {
 }
 
 TEST_F(ABCMovedFixture, Test8UnsubscribeYourselfDuringNotification) {
-    InSequence seq;
+    ::testing::InSequence seq;
     EXPECT_CALL(a, Call(_, 1, 1));
     EXPECT_CALL(b, Call(_, 1, 1)).WillOnce([&] { subB.Disconnect(); });
     EXPECT_CALL(c, Call(_, 1, 1));
@@ -249,7 +244,7 @@ TEST_F(ABCMovedFixture, Test8UnsubscribeYourselfDuringNotification) {
 }
 
 TEST_F(ABCMovedFixture, Test8HandlerDisconnectedBeforeItsCallIsNotCalled) {
-    InSequence seq;
+    ::testing::InSequence seq;
     EXPECT_CALL(a, Call(_, 1, 1)).WillOnce([&] { subB.Disconnect(); });
     EXPECT_CALL(c, Call(_, 1, 1));
 
@@ -257,7 +252,7 @@ TEST_F(ABCMovedFixture, Test8HandlerDisconnectedBeforeItsCallIsNotCalled) {
 }
 
 TEST_F(ABCMovedFixture, Test8DisconnectingOneHandlerDoesNotAffectOthers) {
-    InSequence seq;
+    ::testing::InSequence seq;
     EXPECT_CALL(a, Call(_, 1, 1));
     EXPECT_CALL(b, Call(_, 1, 1)).WillOnce([&] { subC.Disconnect(); });
 
@@ -269,10 +264,10 @@ TEST_F(ABCMovedFixture, Test8DisconnectingOneHandlerDoesNotAffectOthers) {
 }
 
 TEST_F(ABCMovedFixture, Test9HandlerAddedDuringNotificationIsCalledFromNextEvent) {
-    StrictMock<MovedHandler> d;
-    Subscription subD;
+    ::testing::StrictMock<MovedHandler> d;
+    shapes::observer::Subscription subD;
 
-    InSequence seq;
+    ::testing::InSequence seq;
     EXPECT_CALL(a, Call(_, 1, 1)).WillOnce([&] { subD = picture.SubscribeToShapeMoved(d.AsStdFunction()); });
     EXPECT_CALL(b, Call(_, 1, 1));
     EXPECT_CALL(c, Call(_, 1, 1));
@@ -287,7 +282,7 @@ TEST_F(ABCMovedFixture, Test9HandlerAddedDuringNotificationIsCalledFromNextEvent
 }
 
 TEST_F(ABCMovedFixture, ResubscribedHandlerMovesToEnd) {
-    InSequence seq;
+    ::testing::InSequence seq;
     EXPECT_CALL(a, Call(_, 1, 1));
     EXPECT_CALL(b, Call(_, 1, 1)).WillOnce([&] {
         subB.Disconnect();
@@ -304,13 +299,13 @@ TEST_F(ABCMovedFixture, ResubscribedHandlerMovesToEnd) {
 }
 
 TEST_F(PictureEventsFixture, Test10ChangingColorThroughShapeReferenceNotifiesPicture) {
-    EXPECT_CALL(colorChanged, Call(Ref(*shape), oldColor, newColor));
+    EXPECT_CALL(colorChanged, Call(::testing::Ref(*shape), oldColor, newColor));
 
     picture.GetShape("shape").SetColor(newColor);
 }
 
 TEST_F(PictureEventsFixture, DeletedShapeNoLongerNotifiesPicture) {
-    EXPECT_CALL(deleted, Call(Ref(*shape)));
+    EXPECT_CALL(deleted, Call(::testing::Ref(*shape)));
     auto removed = picture.DeleteShape("shape");
 
     removed->Move(1, 1);
