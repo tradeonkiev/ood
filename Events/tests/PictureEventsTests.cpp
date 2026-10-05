@@ -112,13 +112,13 @@ TEST_F(PictureEventsFixture, Test2ShapeAddedHandlerIsNotCalledOnMove) {
     EXPECT_CALL(added, Call(_)).Times(0);
     EXPECT_CALL(moved, Call(_, _, _));
 
-    shape->Move(5, -3);
+    shape->Move(1, 1);
 }
 
 TEST_F(PictureEventsFixture, Test3MovedHandlerReceivesShapeAndOffset) {
-    EXPECT_CALL(moved, Call(Ref(*shape), 5, -3));
+    EXPECT_CALL(moved, Call(Ref(*shape), 1, 1));
 
-    shape->Move(5, -3);
+    shape->Move(1, 1);
 }
 
 TEST_F(PictureEventsFixture, Test4MovingPictureNotifiesEveryShapeWithOffset) {
@@ -127,10 +127,10 @@ TEST_F(PictureEventsFixture, Test4MovingPictureNotifiesEveryShapeWithOffset) {
     Shape &second = picture.GetShape("second");
 
     InSequence seq;
-    EXPECT_CALL(moved, Call(Ref(*shape), 5, -3));
-    EXPECT_CALL(moved, Call(Ref(second), 5, -3));
+    EXPECT_CALL(moved, Call(Ref(*shape), 1, 1));
+    EXPECT_CALL(moved, Call(Ref(second), 1, 1));
 
-    picture.Move(5, -3);
+    picture.Move(1, 1);
 }
 
 TEST(PictureEventsTest, Test5OneObjectHandlesSeveralEvents) {
@@ -175,7 +175,6 @@ TEST_F(PictureEventsFixture, SeveralHandlersOnOneEvent) {
     shape->SetColor(newColor);
 }
 
-// 6. Подписки на разные события отключаются независимо
 TEST_F(PictureEventsFixture, Test6DisconnectingOneEventDoesNotAffectOthers) {
     movedSub.Disconnect();
 
@@ -189,7 +188,6 @@ TEST_F(PictureEventsFixture, Test6DisconnectingOneEventDoesNotAffectOthers) {
     picture.AddShape(MakeShape("new"));
 }
 
-// 7. RAII-подписка работает для каждого типа события
 TEST(PictureEventsTest, Test7SubscriptionIsDisconnectedOnDestructionForEveryEvent) {
     Picture picture;
     StrictMock<ShapeHandler> added;
