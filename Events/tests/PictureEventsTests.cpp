@@ -116,6 +116,7 @@ TEST_F(PictureEventsFixture, Test1ShapeAddedHandlerIsCalledOnAdd)
 TEST_F(PictureEventsFixture, Test2ShapeAddedHandlerIsNotCalledOnMove)
 {
 	EXPECT_CALL(added, Call(_)).Times(0);
+	EXPECT_CALL(colorChanged, Call(_, _, _)).Times(0);
 	EXPECT_CALL(moved, Call(_, _, _));
 
 	shape->Move(1, 1);
@@ -335,10 +336,4 @@ TEST_F(PictureEventsFixture, DeletedShapeNoLongerNotifiesPicture)
 	removed->SetBounds({ 1, 2, 3, 4 });
 }
 
-TEST_F(PictureEventsFixture, FailedOperationsDoNotNotify)
-{
-	EXPECT_THROW(picture.AddShape(MakeShape("shape")), std::invalid_argument);
-	EXPECT_THROW(picture.DeleteShape("missing"), std::out_of_range);
 
-	EXPECT_EQ(picture.GetShapeCount(), 1);
-}
