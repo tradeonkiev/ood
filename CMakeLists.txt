@@ -10,3 +10,4 @@ include(CTest)
 
 add_subdirectory(Shapes)
 add_subdirectory(Events)
+add_subdirectory(Signals)
