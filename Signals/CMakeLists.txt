@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 4.3)
 project(Signals LANGUAGES CXX)
 
-# Boost.Signals2 header-only: сначала ищем установленный Boost, иначе скачиваем только signals2 и его зависимости
 find_package(Boost 1.80 CONFIG QUIET)
 if (Boost_FOUND)
     set(SIGNALS2_TARGET Boost::headers)
@@ -49,7 +48,7 @@ if (BUILD_TESTING)
 
     add_executable(lw2_signals_tests
             tests/PictureSignalsTests.cpp
-            tests/Signals2SemanticsTests.cpp)
+            tests/Signals2Tests.cpp)
     target_link_libraries(lw2_signals_tests PRIVATE signals_lib GTest::gmock_main)
 
     include(GoogleTest)
