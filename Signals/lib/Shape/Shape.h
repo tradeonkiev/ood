@@ -5,6 +5,7 @@
 #include <boost/signals2/signal.hpp>
 #include <memory>
 #include <string>
+
 namespace shapes
 {
 class Shape

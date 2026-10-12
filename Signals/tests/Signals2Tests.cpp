@@ -11,8 +11,7 @@
 
 namespace
 {
-namespace bs2 = boost::signals2;
-using Signal = bs2::signal<void(int)>;
+using Signal = boost::signals2::signal<void(int)>;
 using Handler = ::testing::StrictMock<::testing::MockFunction<void(int)>>;
 using ::testing::_;
 using ::testing::InSequence;
@@ -29,7 +28,7 @@ protected:
 
 	Signal signal;
 	Handler a, b, c;
-	bs2::scoped_connection subA, subB, subC;
+	boost::signals2::scoped_connection subA, subB, subC;
 };
 } // namespace
 
@@ -69,7 +68,7 @@ TEST_F(ABCSignalFixture, SlotDisconnectedDuringEmissionBeforeItsCallIsNotCalled)
 TEST_F(ABCSignalFixture, SlotConnectedDuringEmissionIsCalledFromNextEmission)
 {
 	Handler d;
-	bs2::scoped_connection subD;
+	boost::signals2::scoped_connection subD;
 
 	InSequence seq;
 	EXPECT_CALL(a, Call(1)).WillOnce([&] { subD = signal.connect(d.AsStdFunction()); });
@@ -92,7 +91,7 @@ TEST(Signals2Semantics, ScopedConnectionDisconnectsOnDestruction)
 	EXPECT_CALL(handler, Call(1));
 
 	{
-		bs2::scoped_connection connection = signal.connect(handler.AsStdFunction());
+		boost::signals2::scoped_connection connection = signal.connect(handler.AsStdFunction());
 		signal(1);
 	}
 	signal(2);
@@ -105,7 +104,7 @@ TEST(Signals2Semantics, PlainConnectionKeepsSlotAfterDestruction)
 	EXPECT_CALL(handler, Call(1));
 
 	{
-		bs2::connection connection = signal.connect(handler.AsStdFunction());
+		boost::signals2::connection connection = signal.connect(handler.AsStdFunction());
 	}
 	signal(1);
 }
@@ -116,9 +115,9 @@ TEST(Signals2Semantics, ScopedConnectionCanBeMovedWithoutDisconnecting)
 	Handler handler;
 	EXPECT_CALL(handler, Call(1));
 
-	std::vector<bs2::scoped_connection> connections;
+	std::vector<boost::signals2::scoped_connection> connections;
 	{
-		bs2::scoped_connection connection = signal.connect(handler.AsStdFunction());
+		boost::signals2::scoped_connection connection = signal.connect(handler.AsStdFunction());
 		connections.push_back(std::move(connection));
 	}
 	signal(1);
@@ -131,7 +130,7 @@ TEST(Signals2Semantics, ConnectionOutlivingSignalIsSafe)
 	Handler handler;
 	EXPECT_CALL(handler, Call(_)).Times(0);
 
-	bs2::connection connection;
+	boost::signals2::connection connection;
 	{
 		Signal signal;
 		connection = signal.connect(handler.AsStdFunction());
@@ -153,12 +152,12 @@ TEST(Signals2Semantics, BlockedConnectionIsSkippedTemporarily)
 {
 	Signal signal;
 	Handler handler;
-	bs2::scoped_connection connection = signal.connect(handler.AsStdFunction());
+	boost::signals2::scoped_connection connection = signal.connect(handler.AsStdFunction());
 
 	EXPECT_CALL(handler, Call(2));
 
 	{
-		bs2::shared_connection_block block(connection);
+		boost::signals2::shared_connection_block block(connection);
 		signal(1);
 	}
 	signal(2);

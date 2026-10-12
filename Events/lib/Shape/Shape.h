@@ -4,6 +4,7 @@
 #include "Strategies/IShapeGeometry.h"
 #include <memory>
 #include <string>
+
 namespace shapes
 {
 class Shape
