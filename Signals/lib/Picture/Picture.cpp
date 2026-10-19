@@ -1,13 +1,21 @@
 #include "Picture.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <stdexcept>
 #include <utility>
 
 namespace shapes
 {
-void Picture::AddShape(std::unique_ptr<Shape> shape)
+void Picture::AddShape(std::unique_ptr<Shape> shape) { AddShape(std::move(shape), m_shapes.size()); }
+
+void Picture::AddShape(std::unique_ptr<Shape> shape, int index)
 {
+	if (index > m_shapes.size())
+	{
+		throw std::out_of_range("Shape index is out of range");
+	}
+
 	const std::string id = shape->GetId();
 	if (m_shapesById.contains(id))
 	{
@@ -16,7 +24,7 @@ void Picture::AddShape(std::unique_ptr<Shape> shape)
 
 	Shape* shapePtr = shape.get();
 	auto connections = ConnectToShape(*shapePtr);
-	m_shapes.push_back(std::move(shape));
+	const auto position = m_shapes.insert(m_shapes.begin() + static_cast<std::ptrdiff_t>(index), std::move(shape));
 	try
 	{
 		m_shapesById.emplace(id, shapePtr);
@@ -25,7 +33,7 @@ void Picture::AddShape(std::unique_ptr<Shape> shape)
 	catch (...)
 	{
 		m_shapesById.erase(id);
-		m_shapes.pop_back();
+		m_shapes.erase(position);
 		throw;
 	}
 
@@ -65,6 +73,27 @@ Shape& Picture::GetShape(const std::string& id)
 	return *shape;
 }
 
+const Shape* Picture::FindShapeAtPoint(const Point& point) const
+{
+	for (auto it = m_shapes.rbegin(); it != m_shapes.rend(); it++)
+	{
+		if ((*it)->ContainsPoint(point))
+		{
+			return it->get();
+		}
+	}
+
+	return nullptr;
+}
+
+int Picture::GetShapeIndex(const std::string& id) const
+{
+	const Shape* shape = &GetShape(id);
+	const auto position = std::find_if(
+		m_shapes.begin(), m_shapes.end(), [shape](const auto& candidate) { return candidate.get() == shape; });
+	return static_cast<int>(position - m_shapes.begin());
+}
+
 boost::signals2::connection Picture::SubscribeToShapeAdded(const ShapeAddedSignal::slot_type& handler)
 {
 	return m_shapeAddedSignal.connect(handler);
@@ -95,7 +124,7 @@ Picture::ShapeConnections Picture::ConnectToShape(Shape& shape)
 	ShapeConnections connections;
 
 	connections.moved = shape.SubscribeToMoved(
-		[this](const Shape& movedShape, int dx, int dy) { m_shapeMovedSignal(movedShape, dx, dy); });
+		[this](const Shape& movedShape, double dx, double dy) { m_shapeMovedSignal(movedShape, dx, dy); });
 
 	connections.colorChanged = shape.SubscribeToColorChanged(
 		[this](const Shape& changedShape, gfx::Color oldColor, gfx::Color newColor) {
@@ -119,7 +148,7 @@ const Shape& Picture::GetShape(const std::string& id) const
 	return *shape;
 }
 
-const Shape& Picture::GetShapeAt(std::size_t index) const
+const Shape& Picture::GetShapeAt(int index) const
 {
 	if (index >= m_shapes.size())
 	{
@@ -128,7 +157,7 @@ const Shape& Picture::GetShapeAt(std::size_t index) const
 	return *m_shapes[index];
 }
 
-std::size_t Picture::GetShapeCount() const noexcept { return m_shapes.size(); }
+int Picture::GetShapeCount() const noexcept { return m_shapes.size(); }
 
 void Picture::Move(const double dx, const double dy)
 {

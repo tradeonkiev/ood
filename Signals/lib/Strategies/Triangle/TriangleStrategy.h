@@ -9,8 +9,8 @@ class TriangleStrategy : public shapes::IShapeGeometry
 public:
 	explicit TriangleStrategy(std::array<shapes::Point, 3> vertices);
 	void Draw(gfx::ICanvas& canvas, gfx::Color color) const override;
-	void Move(int dx, int dy) override;
-
+	void Move(double dx, double dy) override;
+	bool ContainsPoint(const shapes::Point& point) const override;
 	void SetBounds(const shapes::Rect& bounds) override;
 	std::string GetType() const override;
 	std::string GetParameters() const override;

@@ -22,12 +22,13 @@ class StubShapeGeometry : public shapes::IShapeGeometry
 public:
 	void Draw(gfx::ICanvas&, gfx::Color) const override {}
 
-	void Move(int dx, int dy) override
+	void Move(double dx, double dy) override
 	{
 		m_bounds.left += dx;
 		m_bounds.top += dy;
 	}
 
+	bool ContainsPoint(const shapes::Point&) const override { return false; }
 	shapes::Rect GetBounds() const override { return m_bounds; }
 	void SetBounds(const shapes::Rect& bounds) override { m_bounds = bounds; }
 	std::string GetType() const override { return "stub"; }
@@ -47,13 +48,13 @@ class MockChangeLog
 public:
 	MOCK_METHOD(void, OnShapeAdded, (const Shape& shape));
 	MOCK_METHOD(void, OnShapeDeleted, (const Shape& shape));
-	MOCK_METHOD(void, OnShapeMoved, (const Shape& shape, int dx, int dy));
+	MOCK_METHOD(void, OnShapeMoved, (const Shape& shape, double dx, double dy));
 	MOCK_METHOD(void, OnShapeColorChanged, (const Shape& shape, gfx::Color oldColor, gfx::Color newColor));
 	MOCK_METHOD(void, OnShapeGeometryChanged, (const Shape& shape));
 };
 
 using ShapeHandler = ::testing::MockFunction<void(const Shape&)>;
-using MovedHandler = ::testing::MockFunction<void(const Shape&, int, int)>;
+using MovedHandler = ::testing::MockFunction<void(const Shape&, double, double)>;
 using ColorHandler = ::testing::MockFunction<void(const Shape&, gfx::Color, gfx::Color)>;
 
 class PictureEventsFixture : public ::testing::Test
@@ -149,7 +150,7 @@ TEST(PictureEventsTest, Test5OneObjectHandlesSeveralEvents)
 
 	boost::signals2::scoped_connection addedSub = picture.SubscribeToShapeAdded([&log](const Shape& s) { log.OnShapeAdded(s); });
 	boost::signals2::scoped_connection deletedSub = picture.SubscribeToShapeRemoved([&log](const Shape& s) { log.OnShapeDeleted(s); });
-	boost::signals2::scoped_connection movedSub = picture.SubscribeToShapeMoved([&log](const Shape& s, int dx, int dy) { log.OnShapeMoved(s, dx, dy); });
+	boost::signals2::scoped_connection movedSub = picture.SubscribeToShapeMoved([&log](const Shape& s, double dx, double dy) { log.OnShapeMoved(s, dx, dy); });
 	boost::signals2::scoped_connection colorSub = picture.SubscribeToShapeColorChanged([&log](const Shape& s, gfx::Color oldColor, gfx::Color newColor) {
 		log.OnShapeColorChanged(s, oldColor, newColor);
 	});

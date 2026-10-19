@@ -86,10 +86,10 @@ void CommandProcessor::Execute(const std::string& commandLine)
 
 	if (command == "List")
 	{
-		for (std::size_t index = 0; index < m_picture.GetShapeCount(); ++index)
+		for (int i = 0; i < m_picture.GetShapeCount(); i++)
 		{
-			const auto& shape = m_picture.GetShapeAt(index);
-			m_output << index + 1 << ' ' << shape.GetType() << ' ' << shape.GetId() << ' '
+			const auto& shape = m_picture.GetShapeAt(i);
+			m_output << i + 1 << ' ' << shape.GetType() << ' ' << shape.GetId() << ' '
 					 << shape.GetColor().ToHexString() << ' ' << shape.GetParameters() << '\n';
 		}
 		return;

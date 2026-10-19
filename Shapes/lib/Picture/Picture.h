@@ -22,8 +22,8 @@ public:
 	void Draw(gfx::ICanvas& canvas) const;
 	Shape& GetShape(const std::string& id);
 	const Shape& GetShape(const std::string& id) const;
-	const Shape& GetShapeAt(std::size_t index) const;
-	std::size_t GetShapeCount() const noexcept;
+	const Shape& GetShapeAt(int index) const;
+	int GetShapeCount() const noexcept;
 
 	void Update() override;
 

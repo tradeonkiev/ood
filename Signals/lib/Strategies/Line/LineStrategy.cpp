@@ -20,10 +20,27 @@ void LineStrategy::Draw(gfx::ICanvas& canvas, gfx::Color color) const
 	canvas.Flush();
 }
 
-void LineStrategy::Move(int dx, int dy)
+void LineStrategy::Move(double dx, double dy)
 {
 	m_start = { m_start.x + dx, m_start.y + dy };
 	m_end = { m_end.x + dx, m_end.y + dy };
+}
+
+bool LineStrategy::ContainsPoint(const shapes::Point& point) const
+{
+	constexpr double HitTolerance = 3;
+
+	// Расстояние от точки до отрезка: проецируем точку на прямую и зажимаем проекцию в пределах отрезка
+	const double dx = m_end.x - m_start.x;
+	const double dy = m_end.y - m_start.y;
+	const double lengthSquared = dx * dx + dy * dy;
+	const double t = lengthSquared == 0
+		? 0
+		: std::clamp(((point.x - m_start.x) * dx + (point.y - m_start.y) * dy) / lengthSquared, 0.0, 1.0);
+
+	const double nearestX = m_start.x + t * dx;
+	const double nearestY = m_start.y + t * dy;
+	return std::hypot(point.x - nearestX, point.y - nearestY) <= HitTolerance;
 }
 
 shapes::Rect LineStrategy::GetBounds() const

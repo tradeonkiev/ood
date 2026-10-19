@@ -27,7 +27,9 @@ void Shape::SetColor(gfx::Color color)
 
 void Shape::Draw(gfx::ICanvas& canvas) const { m_strategy->Draw(canvas, m_color); }
 
-void Shape::Move(int dx, int dy)
+bool Shape::ContainsPoint(const shapes::Point& point) const { return m_strategy->ContainsPoint(point); }
+
+void Shape::Move(double dx, double dy)
 {
 	m_strategy->Move(dx, dy);
 

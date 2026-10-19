@@ -76,7 +76,7 @@ const Shape& Picture::GetShape(const std::string& id) const
 	return *shape;
 }
 
-const Shape& Picture::GetShapeAt(std::size_t index) const
+const Shape& Picture::GetShapeAt(intconst
 {
 	if (index >= m_shapes.size())
 	{
@@ -85,7 +85,7 @@ const Shape& Picture::GetShapeAt(std::size_t index) const
 	return *m_shapes[index];
 }
 
-std::size_t Picture::GetShapeCount() const noexcept { return m_shapes.size(); }
+int Picture::GetShapeCount() const noexcept { return m_shapes.size(); }
 
 void Picture::Move(const double dx, const double dy)
 {

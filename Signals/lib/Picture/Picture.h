@@ -27,13 +27,16 @@ public:
 	Picture& operator=(const Picture&) = delete;
 
 	void AddShape(std::unique_ptr<Shape> shape);
+	void AddShape(std::unique_ptr<Shape> shape, int index);
 	std::unique_ptr<Shape> DeleteShape(const std::string& id);
 	void Move(double dx, double dy);
 	void Draw(gfx::ICanvas& canvas) const;
 	Shape& GetShape(const std::string& id);
 	const Shape& GetShape(const std::string& id) const;
-	const Shape& GetShapeAt(std::size_t index) const;
-	std::size_t GetShapeCount() const noexcept;
+	const Shape& GetShapeAt(int index) const;
+	const Shape* FindShapeAtPoint(const Point& point) const;
+	int GetShapeIndex(const std::string& id) const;
+	int GetShapeCount() const noexcept;
 
 	boost::signals2::connection SubscribeToShapeAdded(const ShapeAddedSignal::slot_type& handler);
 	boost::signals2::connection SubscribeToShapeRemoved(const ShapeRemovedSignal::slot_type& handler);

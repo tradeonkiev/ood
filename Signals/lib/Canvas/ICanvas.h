@@ -4,6 +4,7 @@
 #include "Geometry/Geometry.h"
 
 #include <string>
+#include <vector>
 
 namespace gfx
 {
@@ -16,6 +17,8 @@ public:
 	virtual void SetColor(Color color) = 0;
 	virtual void MoveTo(shapes::Point point) = 0;
 	virtual void LineTo(shapes::Point point) = 0;
+	virtual void DrawRectangle(const shapes::Rect& bounds) = 0;
+	virtual void DrawPolygon(const std::vector<shapes::Point>& vertices) = 0;
 	virtual void DrawEllipse(shapes::Point center, double radiusX, double radiusY) = 0;
 	virtual void DrawText(shapes::Point point, double fontSize, const std::string& text) = 0;
 	virtual void Flush() const = 0;

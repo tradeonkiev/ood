@@ -18,7 +18,7 @@ template <typename Subject>
 class CountingObserver : public shapes::observer::IObserver<Subject>
 {
 public:
-	void Update() override { ++m_updateCount; }
+	void Update() override { m_updateCount++; }
 
 	unsigned GetUpdateCount() const { return m_updateCount; }
 	void Reset() { m_updateCount = 0; }

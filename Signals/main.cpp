@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
 	boost::signals2::scoped_connection addedSubscription = picture.SubscribeToShapeAdded([&log](const shapes::Shape& shape) { log.OnShapeAdded(shape); });
 	boost::signals2::scoped_connection deletedSubscription = picture.SubscribeToShapeRemoved([&log](const shapes::Shape& shape) { log.OnShapeDeleted(shape); });
 	boost::signals2::scoped_connection movedSubscription = picture.SubscribeToShapeMoved(
-		[&log](const shapes::Shape& shape, int dx, int dy) { log.OnShapeMoved(shape, dx, dy); });
+		[&log](const shapes::Shape& shape, double dx, double dy) { log.OnShapeMoved(shape, dx, dy); });
 	boost::signals2::scoped_connection colorSubscription = picture.SubscribeToShapeColorChanged(
 		[&log](const shapes::Shape& shape, gfx::Color oldColor, gfx::Color newColor) {
 			log.OnShapeColorChanged(shape, oldColor, newColor);

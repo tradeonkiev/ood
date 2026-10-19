@@ -5,6 +5,7 @@
 #include "Geometry\Geometry.h"
 #include <sstream>
 #include <string>
+#include <vector>
 namespace gfx
 {
 
@@ -18,6 +19,8 @@ public:
 	void SetColor(Color color) override;
 	void MoveTo(shapes::Point point) override;
 	void LineTo(shapes::Point point) override;
+	void DrawRectangle(const shapes::Rect& bounds) override;
+	void DrawPolygon(const std::vector<shapes::Point>& vertices) override;
 	void DrawEllipse(shapes::Point center, double radiusX, double radiusY) override;
 	void DrawText(shapes::Point point, double fontSize, const std::string& text) override;
 	void Flush() const override;

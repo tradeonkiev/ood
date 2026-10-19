@@ -46,6 +46,22 @@ void SvgCanvas::LineTo(shapes::Point point)
 	m_currentY = point.y;
 }
 
+void SvgCanvas::DrawRectangle(const shapes::Rect& bounds)
+{
+	m_content << "  <rect x=\"" << bounds.left << "\" y=\"" << bounds.top << "\" width=\"" << bounds.width
+			  << "\" height=\"" << bounds.height << "\" fill=\"none\" stroke=\"" << m_color.ToHexString() << "\" />\n";
+}
+
+void SvgCanvas::DrawPolygon(const std::vector<shapes::Point>& vertices)
+{
+	m_content << "  <polygon points=\"";
+	for (const auto& vertex : vertices)
+	{
+		m_content << vertex.x << ',' << vertex.y << ' ';
+	}
+	m_content << "\" fill=\"none\" stroke=\"" << m_color.ToHexString() << "\" />\n";
+}
+
 void SvgCanvas::DrawEllipse(shapes::Point center, double radiusX, double radiusY)
 {
 	m_content << "  <ellipse cx=\"" << center.x << "\" cy=\"" << center.y << "\" rx=\"" << radiusX << "\" ry=\""

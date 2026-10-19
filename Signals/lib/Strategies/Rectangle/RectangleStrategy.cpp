@@ -13,17 +13,18 @@ RectangleStrategy::RectangleStrategy(shapes::Point topLeft, double width, double
 void RectangleStrategy::Draw(gfx::ICanvas& canvas, gfx::Color color) const
 {
 	canvas.SetColor(color);
-	canvas.MoveTo({ m_bounds.left, m_bounds.top });
-	canvas.LineTo({ m_bounds.Right(), m_bounds.top });
-	canvas.LineTo({ m_bounds.Right(), m_bounds.Bottom() });
-	canvas.LineTo({ m_bounds.left, m_bounds.Bottom() });
-	canvas.LineTo({ m_bounds.left, m_bounds.top });
+	canvas.DrawRectangle(m_bounds);
 	canvas.Flush();
 }
 
-void RectangleStrategy::Move(int dx, int dy)
+void RectangleStrategy::Move(double dx, double dy)
 {
 	m_bounds = { m_bounds.left + dx, m_bounds.top + dy, m_bounds.width, m_bounds.height };
+}
+
+bool RectangleStrategy::ContainsPoint(const shapes::Point& point) const
+{
+	return point.x >= m_bounds.left && point.x <= m_bounds.left + m_bounds.width && point.y >= m_bounds.top && point.y <= m_bounds.top + m_bounds.height;
 }
 
 shapes::Rect RectangleStrategy::GetBounds() const { return m_bounds; }

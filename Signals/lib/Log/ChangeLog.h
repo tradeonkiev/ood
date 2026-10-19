@@ -12,7 +12,7 @@ namespace shapes {
 
         void OnShapeDeleted(const Shape &shape) { m_output << "Shape deleted: " << shape.GetId() << '\n'; }
 
-        void OnShapeMoved(const Shape &shape, int dx, int dy) {
+        void OnShapeMoved(const Shape &shape, double dx, double dy) {
             m_output << "Shape moved: " << shape.GetId() << " by (" << dx << ", " << dy << ")\n";
         }
 
