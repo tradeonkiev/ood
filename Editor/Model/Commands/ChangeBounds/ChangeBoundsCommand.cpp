@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace ebator
+namespace editor
 {
 
 ChangeBoundsCommand::ChangeBoundsCommand(
@@ -18,4 +18,4 @@ void ChangeBoundsCommand::Execute() { m_picture.GetShape(m_id).SetBounds(m_newBo
 
 void ChangeBoundsCommand::Unexecute() { m_picture.GetShape(m_id).SetBounds(m_oldBounds); }
 
-} // namespace ebator
+} // namespace editor

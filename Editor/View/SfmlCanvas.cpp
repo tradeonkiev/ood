@@ -19,7 +19,7 @@ void SfmlCanvas::SetColor(Color color) { m_color = sf::Color(color.red, color.gr
 
 void SfmlCanvas::MoveTo(shapes::Point) {}
 void SfmlCanvas::LineTo(shapes::Point) {}
-void SfmlCanvas::Flush() const {}
+void SfmlCanvas::Flush() const {} 
 void SfmlCanvas::DrawText(shapes::Point, double, const std::string&) {}
 
 void SfmlCanvas::DrawRectangle(const shapes::Rect& bounds)

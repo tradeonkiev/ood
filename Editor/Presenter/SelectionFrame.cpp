@@ -4,7 +4,7 @@
 #include <cmath>
 #include <utility>
 
-namespace ebator
+namespace editor
 {
 
 std::array<shapes::Point, 4> GetCorners(const shapes::Rect& frame)
@@ -70,4 +70,4 @@ shapes::Rect ResizeFrame(const shapes::Rect& frame, Corner corner, const shapes:
 	return { left, top, width, height };
 }
 
-} // namespace ebator
+} // namespace editor

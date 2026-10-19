@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace ebator
+namespace editor
 {
 
 class ChangeBoundsCommand : public ICommand
@@ -21,4 +21,4 @@ private:
 	shapes::Rect m_oldBounds;
 	shapes::Rect m_newBounds;
 };
-} // namespace ebator
+} // namespace editor

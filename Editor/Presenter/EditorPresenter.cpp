@@ -13,7 +13,7 @@
 #include <string>
 #include <utility>
 
-namespace ebator
+namespace editor
 {
 
 std::unique_ptr<shapes::IShapeGeometry> CreateGeometry(ShapeType type, const shapes::Rect& bounds)
@@ -122,7 +122,7 @@ void EditorPresenter::OnDeleteSelected()
 	{
 		return;
 	}
-	
+
 	m_history.Execute(std::make_unique<DeleteShapeCommand>(m_picture, *m_state.selectedId));
 }
 
@@ -165,4 +165,4 @@ void EditorPresenter::FinishDrag()
 
 std::string EditorPresenter::GenerateShapeId() { return std::format("shape{}", m_state.nextShapeId++); }
 
-} // namespace ebator
+} // namespace editor

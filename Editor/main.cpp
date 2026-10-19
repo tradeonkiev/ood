@@ -10,8 +10,8 @@ int main()
 	window.setVerticalSyncEnabled(true);
 
 	shapes::Picture picture;
-	ebator::SfmlEditorView view(window);
-	ebator::EditorPresenter presenter(picture, view);
+	editor::SfmlEditorView view(window);
+	editor::EditorPresenter presenter(picture, view);
 
 	view.Run();
 }

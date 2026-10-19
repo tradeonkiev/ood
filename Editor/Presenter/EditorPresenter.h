@@ -4,13 +4,11 @@
 #include "Picture/Picture.h"
 #include "Presenter/SelectionFrame.h"
 #include "View/IEditorView.h"
-
 #include <boost/signals2/connection.hpp>
-
 #include <optional>
 #include <string>
 
-namespace ebator
+namespace editor
 {
 
 enum class Mode
@@ -35,10 +33,6 @@ class EditorPresenter : public IEditorViewListener
 public:
 	EditorPresenter(shapes::Picture& picture, IEditorView& view);
 	~EditorPresenter() override;
-
-	EditorPresenter(const EditorPresenter&) = delete;
-	EditorPresenter& operator=(const EditorPresenter&) = delete;
-
 	void OnPaint() override;
 
 	void OnMouseDown(const shapes::Point& point) override;
@@ -63,4 +57,4 @@ private:
 	boost::signals2::scoped_connection m_shapeRemovedConnection;
 };
 
-} // namespace ebator
+} // namespace editor

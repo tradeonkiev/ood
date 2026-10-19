@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace ebator
+namespace editor
 {
 
 void History::Execute(std::unique_ptr<ICommand> command)
@@ -37,4 +37,4 @@ void History::Redo()
 	++m_nextIndex;
 }
 
-} // namespace ebator
+} // namespace editor

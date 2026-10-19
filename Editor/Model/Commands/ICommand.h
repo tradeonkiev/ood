@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ebator
+namespace editor
 {
 
 class ICommand
@@ -11,4 +11,4 @@ public:
 	virtual void Unexecute() = 0;
 };
 
-} // namespace ebator
+} // namespace editor

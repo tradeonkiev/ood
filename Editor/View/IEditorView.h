@@ -5,7 +5,7 @@
 
 #include <optional>
 
-namespace ebator
+namespace editor
 {
 
 enum class ShapeType
@@ -23,7 +23,7 @@ public:
 	virtual void OnMouseDown(const shapes::Point& point) = 0;
 	virtual void OnMouseMove(const shapes::Point& point) = 0;
 	virtual void OnMouseUp(const shapes::Point& point) = 0;
-	virtual void OnAddShape(ShapeType type	) = 0;
+	virtual void OnAddShape(ShapeType type) = 0;
 	virtual void OnDeleteSelected() = 0;
 	virtual void OnUndo() = 0;
 	virtual void OnRedo() = 0;
@@ -39,4 +39,4 @@ public:
 	virtual void Render(const shapes::Picture& picture, const std::optional<shapes::Rect>& selectionFrame) = 0;
 };
 
-} // namespace ebator
+} // namespace editor

@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 
-namespace ebator
+namespace editor
 {
 
 class DeleteShapeCommand : public ICommand
@@ -24,4 +24,4 @@ private:
 	std::unique_ptr<shapes::Shape> m_shape;
 };
 
-} // namespace ebator
+} // namespace editor

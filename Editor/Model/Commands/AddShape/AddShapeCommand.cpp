@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace ebator
+namespace editor
 {
 
 AddShapeCommand::AddShapeCommand(shapes::Picture& picture, std::unique_ptr<shapes::Shape> shape)
@@ -16,4 +16,4 @@ void AddShapeCommand::Execute() { m_picture.AddShape(std::move(m_shape)); }
 
 void AddShapeCommand::Unexecute() { m_shape = m_picture.DeleteShape(m_id); }
 
-} // namespace ebator
+} // namespace editor

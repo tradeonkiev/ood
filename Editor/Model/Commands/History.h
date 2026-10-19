@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-namespace ebator
+namespace editor
 {
 
 class History
@@ -23,4 +23,4 @@ private:
 	int m_nextIndex = 0;
 };
 
-} // namespace ebator
+} // namespace editor

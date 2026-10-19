@@ -8,7 +8,7 @@
 
 #include <optional>
 
-namespace ebator
+namespace editor
 {
 
 enum class ToolbarButton
@@ -43,4 +43,4 @@ private:
 	bool m_mouseCaptured = false;
 };
 
-} // namespace ebator
+} // namespace editor

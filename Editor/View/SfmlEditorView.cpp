@@ -7,10 +7,10 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/View.hpp>
 #include <SFML/Window/Mouse.hpp>
-
 #include <array>
+#include <iostream>
 
-namespace ebator
+namespace editor
 {
 
 float ToolbarHeight = 48;
@@ -279,4 +279,4 @@ std::optional<ToolbarButton> SfmlEditorView::FindToolbarButton(sf::Vector2i posi
 	return std::nullopt;
 }
 
-} // namespace ebator
+} // namespace editor

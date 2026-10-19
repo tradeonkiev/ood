@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-namespace ebator
+namespace editor
 {
 
 class AddShapeCommand : public ICommand
@@ -22,4 +22,4 @@ private:
 	std::unique_ptr<shapes::Shape> m_shape;
 };
 
-} // namespace ebator
+} // namespace editor
