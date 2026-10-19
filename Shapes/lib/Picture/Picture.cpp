@@ -30,7 +30,7 @@ void Picture::AddShape(std::unique_ptr<Shape> shape)
 	}
 
 	NotifyObservers();
-}
+} 
 
 std::unique_ptr<Shape> Picture::DeleteShape(const std::string& id)
 {
@@ -76,7 +76,7 @@ const Shape& Picture::GetShape(const std::string& id) const
 	return *shape;
 }
 
-const Shape& Picture::GetShapeAt(intconst
+const Shape& Picture::GetShapeAt(int index) const
 {
 	if (index >= m_shapes.size())
 	{
