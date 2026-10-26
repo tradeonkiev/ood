@@ -1,6 +1,6 @@
 #include "SfmlEditorView.h"
 
-#include "Presenter/SelectionFrame.h"
+#include "ViewModel/SelectionFrame.h"
 
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/ConvexShape.hpp>
@@ -16,9 +16,8 @@ namespace editor
 float ToolbarHeight = 48;
 float ButtonSize = 40;
 float ButtonSpacing = 8;
-std::array<ToolbarButton, 4> ToolbarButtons{
-	ToolbarButton::Rectangle, ToolbarButton::Ellipse, ToolbarButton::Triangle, ToolbarButton::Delete
-};
+std::array<ToolbarButton, 6> ToolbarButtons{ ToolbarButton::Rectangle, ToolbarButton::Ellipse,
+	ToolbarButton::Triangle, ToolbarButton::Delete, ToolbarButton::Undo, ToolbarButton::Redo };
 
 sf::Vector2f GetButtonPosition(int index)
 {
@@ -36,23 +35,42 @@ sf::RectangleShape MakeOutlinedRect(sf::Vector2f position, sf::Vector2f size, sf
 	return rect;
 }
 
-void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f buttonPosition)
+void DrawArrowIcon(sf::RenderTarget& target, sf::Vector2f topLeft, float size, bool pointsLeft, sf::Color color)
+{
+	const float headWidth = size / 2.5f;
+	sf::RectangleShape shaft({ size - headWidth, 2.5f });
+	shaft.setPosition(topLeft + sf::Vector2f(pointsLeft ? headWidth : 0, size / 2 - 1.25f));
+	shaft.setFillColor(color);
+	target.draw(shaft);
+
+	const float tipX = pointsLeft ? 0 : size;
+	const float baseX = pointsLeft ? headWidth : size - headWidth;
+	sf::ConvexShape head(3);
+	head.setPoint(0, topLeft + sf::Vector2f(tipX, size / 2));
+	head.setPoint(1, topLeft + sf::Vector2f(baseX, size / 4));
+	head.setPoint(2, topLeft + sf::Vector2f(baseX, size * 3 / 4));
+	head.setFillColor(color);
+	target.draw(head);
+}
+
+void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f buttonPosition, bool enabled)
 {
 	constexpr float Padding = 10;
 	const sf::Vector2f topLeft = buttonPosition + sf::Vector2f(Padding, Padding);
 	const float size = ButtonSize - 2 * Padding;
+	const sf::Color iconColor = enabled ? sf::Color(40, 40, 40) : sf::Color(180, 180, 180);
 
 	switch (button)
 	{
 	case ToolbarButton::Rectangle:
-		target.draw(MakeOutlinedRect(topLeft + sf::Vector2f(0, 3), { size, size - 6 }, sf::Color(40, 40, 40), sf::Color::Transparent));
+		target.draw(MakeOutlinedRect(topLeft + sf::Vector2f(0, 3), { size, size - 6 }, iconColor, sf::Color::Transparent));
 		break;
 	case ToolbarButton::Ellipse: {
 		sf::CircleShape ellipse(size / 2);
 		ellipse.setScale({ 1, 0.75f });
 		ellipse.setPosition(topLeft + sf::Vector2f(0, size / 8));
 		ellipse.setFillColor(sf::Color::Transparent);
-		ellipse.setOutlineColor(sf::Color(40, 40, 40));
+		ellipse.setOutlineColor(iconColor);
 		ellipse.setOutlineThickness(1.3f);
 		target.draw(ellipse);
 		break;
@@ -63,7 +81,7 @@ void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f
 		triangle.setPoint(1, topLeft + sf::Vector2f(size, size));
 		triangle.setPoint(2, topLeft + sf::Vector2f(0, size));
 		triangle.setFillColor(sf::Color::Transparent);
-		triangle.setOutlineColor(sf::Color(40, 40, 40));
+		triangle.setOutlineColor(iconColor);
 		triangle.setOutlineThickness(1);
 		target.draw(triangle);
 		break;
@@ -75,11 +93,17 @@ void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f
 			stroke.setOrigin(stroke.getSize() / 2.0f);
 			stroke.setPosition(topLeft + sf::Vector2f(size / 2, size / 2));
 			stroke.setRotation(sf::degrees(angle));
-			stroke.setFillColor(sf::Color(0, 0, 0));
+			stroke.setFillColor(iconColor);
 			target.draw(stroke);
 		}
 		break;
 	}
+	case ToolbarButton::Undo:
+		DrawArrowIcon(target, topLeft, size, true, iconColor);
+		break;
+	case ToolbarButton::Redo:
+		DrawArrowIcon(target, topLeft, size, false, iconColor);
+		break;
 	}
 }
 
@@ -93,16 +117,21 @@ std::optional<ShapeType> ToShapeType(ToolbarButton button)
 		return ShapeType::Ellipse;
 	case ToolbarButton::Triangle:
 		return ShapeType::Triangle;
-	case ToolbarButton::Delete:
+	default:
 		return std::nullopt;
 	}
-	return std::nullopt;
 }
 
-SfmlEditorView::SfmlEditorView(sf::RenderWindow& window)
+SfmlEditorView::SfmlEditorView(sf::RenderWindow& window, EditorViewModel& viewModel)
 	: m_window(window)
 	, m_canvas(window, { 0, ToolbarHeight })
+	, m_viewModel(viewModel)
 {
+	m_selectionFrameBinding = m_viewModel.GetSelectionFrame().Bind(
+		[this](const std::optional<shapes::Rect>& frame) { m_selectionFrame = frame; });
+	m_canDeleteBinding = m_viewModel.CanDelete().Bind([this](bool canDelete) { m_canDelete = canDelete; });
+	m_canUndoBinding = m_viewModel.CanUndo().Bind([this](bool canUndo) { m_canUndo = canUndo; });
+	m_canRedoBinding = m_viewModel.CanRedo().Bind([this](bool canRedo) { m_canRedo = canRedo; });
 }
 
 void SfmlEditorView::Run()
@@ -114,21 +143,19 @@ void SfmlEditorView::Run()
 			HandleEvent(*event);
 		}
 
-		if (m_window.isOpen() && m_listener)
+		if (m_window.isOpen())
 		{
-			m_listener->OnPaint();
+			Render();
 		}
 	}
 }
 
-void SfmlEditorView::SetListener(IEditorViewListener* listener) { m_listener = listener; }
-
-void SfmlEditorView::Render(const shapes::Picture& picture, const std::optional<shapes::Rect>& selectionFrame)
+void SfmlEditorView::Render()
 {
-	picture.Draw(m_canvas);
-	if (selectionFrame)
+	m_viewModel.GetPicture().Draw(m_canvas);
+	if (m_selectionFrame)
 	{
-		DrawSelection(*selectionFrame);
+		DrawSelection(*m_selectionFrame);
 	}
 	DrawToolbar();
 	m_window.display();
@@ -153,25 +180,20 @@ void SfmlEditorView::HandleEvent(const sf::Event& event)
 		}
 		if (pressed->position.y < ToolbarHeight)
 		{
-			const auto button = FindToolbarButton(pressed->position);
-			if (button == ToolbarButton::Delete)
+			if (const auto button = FindToolbarButton(pressed->position); button && IsButtonEnabled(*button))
 			{
-				m_listener->OnDeleteSelected();
-			}
-			else if (button)
-			{
-				m_listener->OnAddShape(*ToShapeType(*button));
+				HandleToolbarButton(*button);
 			}
 			return;
 		}
 		m_mouseCaptured = true;
 		m_lastMousePoint = ToPicturePoint(pressed->position);
-		m_listener->OnMouseDown(m_lastMousePoint);
+		m_viewModel.MouseDown(m_lastMousePoint);
 	}
 	else if (const auto* moved = event.getIf<sf::Event::MouseMoved>())
 	{
 		m_lastMousePoint = ToPicturePoint(moved->position);
-		m_listener->OnMouseMove(m_lastMousePoint);
+		m_viewModel.MouseMove(m_lastMousePoint);
 	}
 	else if (const auto* released = event.getIf<sf::Event::MouseButtonReleased>())
 	{
@@ -179,13 +201,13 @@ void SfmlEditorView::HandleEvent(const sf::Event& event)
 		{
 			m_mouseCaptured = false;
 			m_lastMousePoint = ToPicturePoint(released->position);
-			m_listener->OnMouseUp(m_lastMousePoint);
+			m_viewModel.MouseUp(m_lastMousePoint);
 		}
 	}
 	else if (event.is<sf::Event::FocusLost>())
 	{
 		m_mouseCaptured = false;
-		m_listener->OnMouseUp(m_lastMousePoint);
+		m_viewModel.MouseUp(m_lastMousePoint);
 	}
 	else if (const auto* key = event.getIf<sf::Event::KeyPressed>())
 	{
@@ -198,7 +220,7 @@ void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 
 	if (key.code == sf::Keyboard::Key::Delete)
 	{
-		m_listener->OnDeleteSelected();
+		m_viewModel.DeleteSelected();
 		return;
 	}
 
@@ -210,19 +232,53 @@ void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 	if (m_mouseCaptured)
 	{
 		m_mouseCaptured = false;
-		m_listener->OnMouseUp(m_lastMousePoint);
+		m_viewModel.MouseUp(m_lastMousePoint);
 	}
 
 	switch (key.code)
 	{
 	case sf::Keyboard::Key::Z:
-		key.shift ? m_listener->OnRedo() : m_listener->OnUndo();
+		key.shift ? m_viewModel.Redo() : m_viewModel.Undo();
 		break;
 	case sf::Keyboard::Key::Y:
-		m_listener->OnRedo();
+		m_viewModel.Redo();
 		break;
 	default:
 		break;
+	}
+}
+
+void SfmlEditorView::HandleToolbarButton(ToolbarButton button)
+{
+	switch (button)
+	{
+	case ToolbarButton::Delete:
+		m_viewModel.DeleteSelected();
+		break;
+	case ToolbarButton::Undo:
+		m_viewModel.Undo();
+		break;
+	case ToolbarButton::Redo:
+		m_viewModel.Redo();
+		break;
+	default:
+		m_viewModel.AddShape(*ToShapeType(button));
+		break;
+	}
+}
+
+bool SfmlEditorView::IsButtonEnabled(ToolbarButton button) const
+{
+	switch (button)
+	{
+	case ToolbarButton::Delete:
+		return m_canDelete;
+	case ToolbarButton::Undo:
+		return m_canUndo;
+	case ToolbarButton::Redo:
+		return m_canRedo;
+	default:
+		return true;
 	}
 }
 
@@ -253,10 +309,11 @@ void SfmlEditorView::DrawToolbar()
 	for (int i = 0; i < ToolbarButtons.size(); i++)
 	{
 		const ToolbarButton button = ToolbarButtons[i];
+		const bool enabled = IsButtonEnabled(button);
 		const sf::Vector2f position = GetButtonPosition(i);
-		const sf::Color fill = hovered == button ? sf::Color(220, 220, 220) : sf::Color(250, 250, 250);
+		const sf::Color fill = enabled && hovered == button ? sf::Color(220, 220, 220) : sf::Color(250, 250, 250);
 		m_window.draw(MakeOutlinedRect(position, { ButtonSize, ButtonSize }, sf::Color(0, 0, 0), fill));
-		DrawButtonIcon(m_window, button, position);
+		DrawButtonIcon(m_window, button, position, enabled);
 	}
 }
 

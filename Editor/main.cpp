@@ -1,6 +1,6 @@
 #include "Picture/Picture.h"
-#include "Presenter/EditorPresenter.h"
 #include "View/SfmlEditorView.h"
+#include "ViewModel/EditorViewModel.h"
 
 #include <SFML/Graphics/RenderWindow.hpp>
 
@@ -10,8 +10,8 @@ int main()
 	window.setVerticalSyncEnabled(true);
 
 	shapes::Picture picture;
-	editor::SfmlEditorView view(window);
-	editor::EditorPresenter presenter(picture, view);
+	editor::EditorViewModel viewModel(picture);
+	editor::SfmlEditorView view(window, viewModel);
 
 	view.Run();
 }

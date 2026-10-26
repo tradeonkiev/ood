@@ -25,8 +25,8 @@ add_library(editor_app
         Model/Commands/ChangeBounds/ChangeBoundsCommand.cpp
         Model/Commands/DeleteShape/DeleteShapeCommand.cpp
         Model/Commands/History.cpp
-        Presenter/EditorPresenter.cpp
-        Presenter/SelectionFrame.cpp)
+        ViewModel/EditorViewModel.cpp
+        ViewModel/SelectionFrame.cpp)
 target_include_directories(editor_app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(editor_app PUBLIC signals_lib)
 target_compile_features(editor_app PUBLIC cxx_std_23)
