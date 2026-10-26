@@ -7,6 +7,7 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/View.hpp>
 #include <SFML/Window/Mouse.hpp>
+#include <algorithm>
 #include <array>
 #include <iostream>
 
@@ -16,8 +17,9 @@ namespace editor
 float ToolbarHeight = 48;
 float ButtonSize = 40;
 float ButtonSpacing = 8;
-std::array<ToolbarButton, 6> ToolbarButtons{ ToolbarButton::Rectangle, ToolbarButton::Ellipse,
-	ToolbarButton::Triangle, ToolbarButton::Delete, ToolbarButton::Undo, ToolbarButton::Redo };
+std::array<ToolbarButton, 4> ToolbarButtons{
+	ToolbarButton::Rectangle, ToolbarButton::Ellipse, ToolbarButton::Triangle, ToolbarButton::Delete
+};
 
 sf::Vector2f GetButtonPosition(int index)
 {
@@ -33,24 +35,6 @@ sf::RectangleShape MakeOutlinedRect(sf::Vector2f position, sf::Vector2f size, sf
 	rect.setOutlineColor(outline);
 	rect.setOutlineThickness(1);
 	return rect;
-}
-
-void DrawArrowIcon(sf::RenderTarget& target, sf::Vector2f topLeft, float size, bool pointsLeft, sf::Color color)
-{
-	const float headWidth = size / 2.5f;
-	sf::RectangleShape shaft({ size - headWidth, 2.5f });
-	shaft.setPosition(topLeft + sf::Vector2f(pointsLeft ? headWidth : 0, size / 2 - 1.25f));
-	shaft.setFillColor(color);
-	target.draw(shaft);
-
-	const float tipX = pointsLeft ? 0 : size;
-	const float baseX = pointsLeft ? headWidth : size - headWidth;
-	sf::ConvexShape head(3);
-	head.setPoint(0, topLeft + sf::Vector2f(tipX, size / 2));
-	head.setPoint(1, topLeft + sf::Vector2f(baseX, size / 4));
-	head.setPoint(2, topLeft + sf::Vector2f(baseX, size * 3 / 4));
-	head.setFillColor(color);
-	target.draw(head);
 }
 
 void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f buttonPosition, bool enabled)
@@ -98,12 +82,6 @@ void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f
 		}
 		break;
 	}
-	case ToolbarButton::Undo:
-		DrawArrowIcon(target, topLeft, size, true, iconColor);
-		break;
-	case ToolbarButton::Redo:
-		DrawArrowIcon(target, topLeft, size, false, iconColor);
-		break;
 	}
 }
 
@@ -117,21 +95,34 @@ std::optional<ShapeType> ToShapeType(ToolbarButton button)
 		return ShapeType::Ellipse;
 	case ToolbarButton::Triangle:
 		return ShapeType::Triangle;
-	default:
+	case ToolbarButton::Delete:
 		return std::nullopt;
 	}
+	return std::nullopt;
 }
 
 SfmlEditorView::SfmlEditorView(sf::RenderWindow& window, EditorViewModel& viewModel)
 	: m_window(window)
 	, m_canvas(window, { 0, ToolbarHeight })
 	, m_viewModel(viewModel)
+	, m_fileDialog(window.getNativeHandle())
 {
-	m_selectionFrameBinding = m_viewModel.GetSelectionFrame().Bind(
-		[this](const std::optional<shapes::Rect>& frame) { m_selectionFrame = frame; });
-	m_canDeleteBinding = m_viewModel.CanDelete().Bind([this](bool canDelete) { m_canDelete = canDelete; });
-	m_canUndoBinding = m_viewModel.CanUndo().Bind([this](bool canUndo) { m_canUndo = canUndo; });
-	m_canRedoBinding = m_viewModel.CanRedo().Bind([this](bool canRedo) { m_canRedo = canRedo; });
+	m_viewModelConnection = m_viewModel.SubscribeToChanged([this] { UpdateFromViewModel(); });
+	UpdateFromViewModel();
+	UpdateCanvasSize();
+}
+
+void SfmlEditorView::UpdateCanvasSize()
+{
+	const auto size = m_window.getSize();
+	m_viewModel.SetCanvasSize(size.x, std::max(0.0, size.y - static_cast<double>(ToolbarHeight)));
+}
+
+void SfmlEditorView::UpdateFromViewModel()
+{
+	m_selectedBounds = m_viewModel.GetSelectedBounds();
+	m_canDelete = m_viewModel.CanDelete();
+	m_tool = m_viewModel.GetTool();
 }
 
 void SfmlEditorView::Run()
@@ -153,9 +144,9 @@ void SfmlEditorView::Run()
 void SfmlEditorView::Render()
 {
 	m_viewModel.GetPicture().Draw(m_canvas);
-	if (m_selectionFrame)
+	for (const auto& frame : m_selectedBounds)
 	{
-		DrawSelection(*m_selectionFrame);
+		DrawSelection(frame);
 	}
 	DrawToolbar();
 	m_window.display();
@@ -171,6 +162,7 @@ void SfmlEditorView::HandleEvent(const sf::Event& event)
 	else if (const auto* resized = event.getIf<sf::Event::Resized>())
 	{
 		m_window.setView(sf::View(sf::FloatRect({ 0, 0 }, sf::Vector2f(resized->size))));
+		UpdateCanvasSize();
 	}
 	else if (const auto* pressed = event.getIf<sf::Event::MouseButtonPressed>())
 	{
@@ -188,7 +180,9 @@ void SfmlEditorView::HandleEvent(const sf::Event& event)
 		}
 		m_mouseCaptured = true;
 		m_lastMousePoint = ToPicturePoint(pressed->position);
-		m_viewModel.MouseDown(m_lastMousePoint);
+		const bool ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl)
+			|| sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RControl);
+		m_viewModel.MouseDown(m_lastMousePoint, ctrl);
 	}
 	else if (const auto* moved = event.getIf<sf::Event::MouseMoved>())
 	{
@@ -218,6 +212,12 @@ void SfmlEditorView::HandleEvent(const sf::Event& event)
 void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 {
 
+	if (key.code == sf::Keyboard::Key::Escape)
+	{
+		m_viewModel.Cancel();
+		return;
+	}
+
 	if (key.code == sf::Keyboard::Key::Delete)
 	{
 		m_viewModel.DeleteSelected();
@@ -229,12 +229,6 @@ void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 		return;
 	}
 
-	if (m_mouseCaptured)
-	{
-		m_mouseCaptured = false;
-		m_viewModel.MouseUp(m_lastMousePoint);
-	}
-
 	switch (key.code)
 	{
 	case sf::Keyboard::Key::Z:
@@ -243,48 +237,78 @@ void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 	case sf::Keyboard::Key::Y:
 		m_viewModel.Redo();
 		break;
+	case sf::Keyboard::Key::S:
+		SaveDocument();
+		break;
+	case sf::Keyboard::Key::O:
+		OpenDocument();
+		break;
+	case sf::Keyboard::Key::N:
+		m_viewModel.NewDocument();
+		break;
 	default:
 		break;
+	}
+}
+
+void SfmlEditorView::SaveDocument()
+{
+	auto path = m_viewModel.GetFilePath();
+	if (!path)
+	{
+		path = m_fileDialog.AskSavePath();
+	}
+	if (!path)
+	{
+		return;
+	}
+
+	try
+	{
+		m_viewModel.SaveDocument(*path);
+	}
+	catch (const std::exception& error)
+	{
+		m_fileDialog.ShowError(std::string("Не удалось сохранить документ: ") + error.what());
+	}
+}
+
+void SfmlEditorView::OpenDocument()
+{
+	const auto path = m_fileDialog.AskOpenPath();
+	if (!path)
+	{
+		return;
+	}
+
+	try
+	{
+		m_viewModel.OpenDocument(*path);
+	}
+	catch (const std::exception& error)
+	{
+		m_fileDialog.ShowError(std::string("Не удалось открыть документ: ") + error.what());
 	}
 }
 
 void SfmlEditorView::HandleToolbarButton(ToolbarButton button)
 {
-	switch (button)
+	if (button == ToolbarButton::Delete)
 	{
-	case ToolbarButton::Delete:
 		m_viewModel.DeleteSelected();
-		break;
-	case ToolbarButton::Undo:
-		m_viewModel.Undo();
-		break;
-	case ToolbarButton::Redo:
-		m_viewModel.Redo();
-		break;
-	default:
-		m_viewModel.AddShape(*ToShapeType(button));
-		break;
+		return;
 	}
+	m_viewModel.SelectTool(*ToShapeType(button));
 }
 
 bool SfmlEditorView::IsButtonEnabled(ToolbarButton button) const
 {
-	switch (button)
-	{
-	case ToolbarButton::Delete:
-		return m_canDelete;
-	case ToolbarButton::Undo:
-		return m_canUndo;
-	case ToolbarButton::Redo:
-		return m_canRedo;
-	default:
-		return true;
-	}
+	return button != ToolbarButton::Delete || m_canDelete;
 }
 
-void SfmlEditorView::DrawSelection(const shapes::Rect& frame)
+void SfmlEditorView::DrawSelection(const Rect& frame)
 {
-	const auto toWindow = [](const shapes::Rect& rect) {
+	const auto toWindow = [](const Rect& rect) {
 		return std::pair{ sf::Vector2f(static_cast<float>(rect.left), static_cast<float>(rect.top) + ToolbarHeight),
 			sf::Vector2f(static_cast<float>(rect.width), static_cast<float>(rect.height)) };
 	};
@@ -311,13 +335,17 @@ void SfmlEditorView::DrawToolbar()
 		const ToolbarButton button = ToolbarButtons[i];
 		const bool enabled = IsButtonEnabled(button);
 		const sf::Vector2f position = GetButtonPosition(i);
-		const sf::Color fill = enabled && hovered == button ? sf::Color(220, 220, 220) : sf::Color(250, 250, 250);
+		sf::Color fill = enabled && hovered == button ? sf::Color(220, 220, 220) : sf::Color(250, 250, 250);
+		if (m_tool && ToShapeType(button) == m_tool)
+		{
+			fill = sf::Color(190, 215, 245);
+		}
 		m_window.draw(MakeOutlinedRect(position, { ButtonSize, ButtonSize }, sf::Color(0, 0, 0), fill));
 		DrawButtonIcon(m_window, button, position, enabled);
 	}
 }
 
-shapes::Point SfmlEditorView::ToPicturePoint(sf::Vector2i position) const
+Point SfmlEditorView::ToPicturePoint(sf::Vector2i position) const
 {
 	return { static_cast<double>(position.x), static_cast<double>(position.y) - ToolbarHeight };
 }

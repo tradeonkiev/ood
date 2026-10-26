@@ -5,7 +5,7 @@
 namespace editor
 {
 
-DeleteShapeCommand::DeleteShapeCommand(shapes::Picture& picture, std::string id)
+DeleteShapeCommand::DeleteShapeCommand(Picture& picture, std::string id)
 	: m_picture(picture)
 	, m_id(std::move(id))
 {

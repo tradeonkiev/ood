@@ -1,5 +1,6 @@
 #pragma once
 
+#include "View/FileDialog.h"
 #include "View/SfmlCanvas.h"
 #include "ViewModel/EditorViewModel.h"
 
@@ -8,6 +9,7 @@
 #include <boost/signals2/connection.hpp>
 
 #include <optional>
+#include <vector>
 
 namespace editor
 {
@@ -18,8 +20,6 @@ enum class ToolbarButton
 	Ellipse,
 	Triangle,
 	Delete,
-	Undo,
-	Redo,
 };
 
 class SfmlEditorView
@@ -29,32 +29,33 @@ public:
 	void Run();
 
 private:
+	void UpdateFromViewModel();
+	void UpdateCanvasSize();
 	void Render();
 	void HandleEvent(const sf::Event& event);
 	void HandleKey(const sf::Event::KeyPressed& key);
 	void HandleToolbarButton(ToolbarButton button);
+	void SaveDocument();
+	void OpenDocument();
 	bool IsButtonEnabled(ToolbarButton button) const;
-	void DrawSelection(const shapes::Rect& frame);
+	void DrawSelection(const Rect& frame);
 	void DrawToolbar();
 
-	shapes::Point ToPicturePoint(sf::Vector2i position) const;
+	Point ToPicturePoint(sf::Vector2i position) const;
 	std::optional<ToolbarButton> FindToolbarButton(sf::Vector2i position) const;
 
 	sf::RenderWindow& m_window;
-	gfx::SfmlCanvas m_canvas;
+	SfmlCanvas m_canvas;
 	EditorViewModel& m_viewModel;
-	shapes::Point m_lastMousePoint;
+	FileDialog m_fileDialog;
+	Point m_lastMousePoint;
 	bool m_mouseCaptured = false;
 
-	std::optional<shapes::Rect> m_selectionFrame;
+	std::vector<Rect> m_selectedBounds;
 	bool m_canDelete = false;
-	bool m_canUndo = false;
-	bool m_canRedo = false;
+	std::optional<ShapeType> m_tool;
 
-	boost::signals2::scoped_connection m_selectionFrameBinding;
-	boost::signals2::scoped_connection m_canDeleteBinding;
-	boost::signals2::scoped_connection m_canUndoBinding;
-	boost::signals2::scoped_connection m_canRedoBinding;
+	boost::signals2::scoped_connection m_viewModelConnection;
 };
 
 } // namespace editor

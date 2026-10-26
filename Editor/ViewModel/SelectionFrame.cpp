@@ -7,13 +7,13 @@
 namespace editor
 {
 
-std::array<shapes::Point, 4> GetCorners(const shapes::Rect& frame)
+std::array<Point, 4> GetCorners(const Rect& frame)
 {
-	return { shapes::Point{ frame.left, frame.top }, shapes::Point{ frame.Right(), frame.top },
-		shapes::Point{ frame.Right(), frame.Bottom() }, shapes::Point{ frame.left, frame.Bottom() } };
+	return { Point{ frame.left, frame.top }, Point{ frame.Right(), frame.top },
+		Point{ frame.Right(), frame.Bottom() }, Point{ frame.left, frame.Bottom() } };
 }
 
-shapes::Point GetOppositeCorner(const shapes::Rect& frame, Corner corner)
+Point GetOppositeCorner(const Rect& frame, Corner corner)
 {
 	switch (corner)
 	{
@@ -36,9 +36,11 @@ std::pair<double, double> GetSpan(double fixed, double dragged)
 	return { start, length };
 }
 
-std::array<shapes::Rect, 4> GetMarkerRects(const shapes::Rect& frame)
+Point GetCorner(const Rect& frame, Corner corner) { return GetCorners(frame)[static_cast<int>(corner)]; }
+
+std::array<Rect, 4> GetMarkerRects(const Rect& frame)
 {
-	std::array<shapes::Rect, 4> markers;
+	std::array<Rect, 4> markers;
 	const auto corners = GetCorners(frame);
 	for (int i = 0; i < corners.size(); i++)
 	{
@@ -47,7 +49,7 @@ std::array<shapes::Rect, 4> GetMarkerRects(const shapes::Rect& frame)
 	return markers;
 }
 
-std::optional<Corner> HitMarker(const shapes::Rect& frame, const shapes::Point& point)
+std::optional<Corner> HitMarker(const Rect& frame, const Point& point)
 {
 	const auto markers = GetMarkerRects(frame);
 	for (int i = 0; i < markers.size(); i++)
@@ -61,13 +63,16 @@ std::optional<Corner> HitMarker(const shapes::Rect& frame, const shapes::Point& 
 	return std::nullopt;
 }
 
-shapes::Rect ResizeFrame(const shapes::Rect& frame, Corner corner, const shapes::Point& point)
+Rect MakeFrame(const Point& fixed, const Point& dragged)
 {
-	const shapes::Point stabelCorner = GetOppositeCorner(frame, corner);
-
-	const auto [left, width] = GetSpan(stabelCorner.x, point.x);
-	const auto [top, height] = GetSpan(stabelCorner.y, point.y);
+	const auto [left, width] = GetSpan(fixed.x, dragged.x);
+	const auto [top, height] = GetSpan(fixed.y, dragged.y);
 	return { left, top, width, height };
+}
+
+Rect ResizeFrame(const Rect& frame, Corner corner, const Point& point)
+{
+	return MakeFrame(GetOppositeCorner(frame, corner), point);
 }
 
 } // namespace editor

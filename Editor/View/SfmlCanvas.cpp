@@ -4,7 +4,7 @@
 #include <SFML/Graphics/ConvexShape.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 
-namespace gfx
+namespace editor
 {
 
 SfmlCanvas::SfmlCanvas(sf::RenderTarget& target, sf::Vector2f origin)
@@ -17,19 +17,14 @@ void SfmlCanvas::Clear() { m_target.clear(sf::Color::White); }
 
 void SfmlCanvas::SetColor(Color color) { m_color = sf::Color(color.red, color.green, color.blue); }
 
-void SfmlCanvas::MoveTo(shapes::Point) {}
-void SfmlCanvas::LineTo(shapes::Point) {}
-void SfmlCanvas::Flush() const {} 
-void SfmlCanvas::DrawText(shapes::Point, double, const std::string&) {}
-
-void SfmlCanvas::DrawRectangle(const shapes::Rect& bounds)
+void SfmlCanvas::DrawRectangle(const Rect& bounds)
 {
 	sf::RectangleShape rectangle({ static_cast<float>(bounds.width), static_cast<float>(bounds.height) });
 	rectangle.setPosition(ToWindow({ bounds.left, bounds.top }));
 	DrawFilled(rectangle);
 }
 
-void SfmlCanvas::DrawPolygon(const std::vector<shapes::Point>& vertices)
+void SfmlCanvas::DrawPolygon(const std::vector<Point>& vertices)
 {
 	sf::ConvexShape polygon(vertices.size());
 	for (int i = 0; i < vertices.size(); i++)
@@ -39,7 +34,7 @@ void SfmlCanvas::DrawPolygon(const std::vector<shapes::Point>& vertices)
 	DrawFilled(polygon);
 }
 
-void SfmlCanvas::DrawEllipse(shapes::Point center, double radiusX, double radiusY)
+void SfmlCanvas::DrawEllipse(Point center, double radiusX, double radiusY)
 {
 	sf::CircleShape ellipse(static_cast<float>(radiusX));
 	ellipse.setPosition(ToWindow({ center.x - radiusX, center.y - radiusY }));
@@ -47,7 +42,7 @@ void SfmlCanvas::DrawEllipse(shapes::Point center, double radiusX, double radius
 	DrawFilled(ellipse);
 }
 
-sf::Vector2f SfmlCanvas::ToWindow(shapes::Point point) const
+sf::Vector2f SfmlCanvas::ToWindow(Point point) const
 {
 	return { m_origin.x + static_cast<float>(point.x), m_origin.y + static_cast<float>(point.y) };
 }
@@ -58,4 +53,4 @@ void SfmlCanvas::DrawFilled(sf::Shape& shape)
 	m_target.draw(shape);
 }
 
-} // namespace gfx
+} // namespace editor

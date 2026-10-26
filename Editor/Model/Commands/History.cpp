@@ -37,4 +37,10 @@ void History::Redo()
 	++m_nextIndex;
 }
 
+void History::Clear()
+{
+	m_commands.clear();
+	m_nextIndex = 0;
+}
+
 } // namespace editor

@@ -6,7 +6,7 @@ namespace editor
 {
 
 ChangeBoundsCommand::ChangeBoundsCommand(
-	shapes::Picture& picture, std::string id, shapes::Rect oldBounds, shapes::Rect newBounds)
+	Picture& picture, std::string id, Rect oldBounds, Rect newBounds)
 	: m_picture(picture)
 	, m_id(std::move(id))
 	, m_oldBounds(oldBounds)

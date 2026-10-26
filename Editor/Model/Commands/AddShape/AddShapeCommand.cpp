@@ -5,7 +5,7 @@
 namespace editor
 {
 
-AddShapeCommand::AddShapeCommand(shapes::Picture& picture, std::unique_ptr<shapes::Shape> shape)
+AddShapeCommand::AddShapeCommand(Picture& picture, std::unique_ptr<Shape> shape)
 	: m_picture(picture)
 	, m_id(shape->GetId())
 	, m_shape(std::move(shape))

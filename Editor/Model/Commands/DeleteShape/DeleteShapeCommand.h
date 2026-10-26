@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Model/Commands/ICommand.h"
-#include "Picture/Picture.h"
+#include "Model/Picture.h"
 
 #include <cstddef>
 #include <memory>
@@ -13,15 +13,15 @@ namespace editor
 class DeleteShapeCommand : public ICommand
 {
 public:
-	DeleteShapeCommand(shapes::Picture& picture, std::string id);
+	DeleteShapeCommand(Picture& picture, std::string id);
 	void Execute() override;
 	void Unexecute() override;
 
 private:
-	shapes::Picture& m_picture;
+	Picture& m_picture;
 	std::string m_id;
 	int m_index = 0;
-	std::unique_ptr<shapes::Shape> m_shape;
+	std::unique_ptr<Shape> m_shape;
 };
 
 } // namespace editor

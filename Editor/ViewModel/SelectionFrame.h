@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Geometry/Geometry.h"
+#include "Model/Geometry.h"
 
 #include <array>
 #include <optional>
@@ -16,8 +16,10 @@ enum class Corner
 	BottomLeft,
 };
 
-std::array<shapes::Rect, 4> GetMarkerRects(const shapes::Rect& frame);
-std::optional<Corner> HitMarker(const shapes::Rect& frame, const shapes::Point& point);
-shapes::Rect ResizeFrame(const shapes::Rect& frame, Corner corner, const shapes::Point& point);
+Point GetCorner(const Rect& frame, Corner corner);
+std::array<Rect, 4> GetMarkerRects(const Rect& frame);
+std::optional<Corner> HitMarker(const Rect& frame, const Point& point);
+Rect MakeFrame(const Point& fixed, const Point& dragged);
+Rect ResizeFrame(const Rect& frame, Corner corner, const Point& point);
 
 } // namespace editor

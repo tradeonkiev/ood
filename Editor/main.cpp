@@ -1,4 +1,4 @@
-#include "Picture/Picture.h"
+#include "Model/Picture.h"
 #include "View/SfmlEditorView.h"
 #include "ViewModel/EditorViewModel.h"
 
@@ -9,7 +9,7 @@ int main()
 	sf::RenderWindow window(sf::VideoMode({ 1280, 800 }), "edirot");
 	window.setVerticalSyncEnabled(true);
 
-	shapes::Picture picture;
+	editor::Picture picture;
 	editor::EditorViewModel viewModel(picture);
 	editor::SfmlEditorView view(window, viewModel);
 
