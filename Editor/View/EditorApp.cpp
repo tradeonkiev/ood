@@ -12,6 +12,7 @@ EditorApp::EditorWindow::EditorWindow(std::shared_ptr<Document> document, IWindo
 	, viewModel(std::move(document), windows)
 	, view(window, viewModel)
 {
+	window.setFramerateLimit(60);
 }
 
 void EditorApp::OpenWindow(std::shared_ptr<Document> document)
@@ -32,7 +33,6 @@ void EditorApp::Run()
 
 		RemoveClosedWindows();
 		OpenPendingWindows();
-		sf::sleep(sf::milliseconds(10));
 	}
 }
 

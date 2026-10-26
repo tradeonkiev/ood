@@ -107,8 +107,8 @@ SfmlEditorView::SfmlEditorView(sf::RenderWindow& window, EditorViewModel& viewMo
 	, m_viewModel(viewModel)
 	, m_fileDialog(window.getNativeHandle())
 {
-	m_viewModelConnection = m_viewModel.SubscribeToChanged([this] { UpdateFromViewModel(); });
-	UpdateFromViewModel();
+	m_viewModelConnection = m_viewModel.SubscribeToChanged([this] { Update(); });
+	Update();
 	UpdateCanvasSize();
 }
 
@@ -118,7 +118,7 @@ void SfmlEditorView::UpdateCanvasSize()
 	m_viewModel.SetCanvasSize(size.x, std::max(0.0, size.y - static_cast<double>(ToolbarHeight)));
 }
 
-void SfmlEditorView::UpdateFromViewModel()
+void SfmlEditorView::Update()
 {
 	m_selectedBounds = m_viewModel.GetSelectedBounds();
 	m_canDelete = m_viewModel.CanDelete();

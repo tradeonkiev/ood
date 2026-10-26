@@ -31,7 +31,7 @@ public:
 	void Render();
 
 private:
-	void UpdateFromViewModel();
+	void Update();
 	void UpdateCanvasSize();
 	void UpdateTitle();
 	void HandleEvent(const sf::Event& event);
