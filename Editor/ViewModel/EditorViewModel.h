@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Model/Commands/History.h"
-#include "Model/Picture.h"
+#include "Model/Document.h"
+#include "ViewModel/IWindowService.h"
 #include "ViewModel/SelectionFrame.h"
 #include <boost/signals2/connection.hpp>
 #include <boost/signals2/signal.hpp>
@@ -40,7 +40,6 @@ struct EditorState
 	Corner resizeCorner = Corner::BottomRight;
 	Point grabbedCorner;
 	std::string createdId;
-	int nextShapeId = 1;
 };
 
 class EditorViewModel
@@ -48,12 +47,13 @@ class EditorViewModel
 public:
 	using Signal = boost::signals2::signal<void()>;
 
-	explicit EditorViewModel(Picture& picture);
+	EditorViewModel(std::shared_ptr<Document> document, IWindowService& windows);
 
 	const Picture& GetPicture() const;
 	std::vector<Rect> GetSelectedBounds() const;
 	bool CanDelete() const;
 	std::optional<ShapeType> GetTool() const;
+	std::string GetTitle() const;
 
 	boost::signals2::connection SubscribeToChanged(const Signal::slot_type& handler);
 
@@ -69,12 +69,12 @@ public:
 	void Redo();
 
 	std::optional<std::filesystem::path> GetFilePath() const;
+	void SaveDocument(const std::filesystem::path& path);
 	void NewDocument();
 	void OpenDocument(const std::filesystem::path& path);
-	void SaveDocument(const std::filesystem::path& path);
+	void OpenNewWindow();
 
 private:
-	void ReplaceDocument(std::vector<std::unique_ptr<Shape>> newShapes);
 	void BeginCreate(const Point& point);
 	bool BeginResize(const Point& point);
 	void ClickShape(const Point& point, bool toggleSelection);
@@ -91,17 +91,17 @@ private:
 	void SetSelection(std::vector<std::string> ids);
 	void SetTool(std::optional<ShapeType> tool);
 
-	std::string GenerateShapeId();
 	Point ClampToCanvas(const Point& point) const;
 	Rect ClampToCanvas(const Rect& rect) const;
 
+	std::shared_ptr<Document> m_document;
+	IWindowService& m_windows;
 	Picture& m_picture;
-	History m_history;
+	History& m_history;
 
 	EditorState m_state;
 	double m_canvasWidth = 0;
 	double m_canvasHeight = 0;
-	std::optional<std::filesystem::path> m_filePath;
 
 	Signal m_changedSignal;
 	boost::signals2::scoped_connection m_shapeRemovedConnection;

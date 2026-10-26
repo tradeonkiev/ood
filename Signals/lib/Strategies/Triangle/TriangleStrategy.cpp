@@ -25,8 +25,6 @@ void TriangleStrategy::Move(double dx, double dy)
 
 bool TriangleStrategy::ContainsPoint(const shapes::Point& point) const
 {
-	// Знак косого произведения (b - a) x (p - a) показывает, с какой стороны от ребра ab лежит точка.
-	// Точка внутри, если она не лежит по разные стороны от рёбер (ноль — точка на ребре)
 	const auto skew = [&point](const shapes::Point& a, const shapes::Point& b) {
 		return (b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x);
 	};

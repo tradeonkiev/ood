@@ -9,6 +9,7 @@
 #include <boost/signals2/connection.hpp>
 
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace editor
@@ -26,12 +27,13 @@ class SfmlEditorView
 {
 public:
 	SfmlEditorView(sf::RenderWindow& window, EditorViewModel& viewModel);
-	void Run();
+	void ProcessEvents();
+	void Render();
 
 private:
 	void UpdateFromViewModel();
 	void UpdateCanvasSize();
-	void Render();
+	void UpdateTitle();
 	void HandleEvent(const sf::Event& event);
 	void HandleKey(const sf::Event::KeyPressed& key);
 	void HandleToolbarButton(ToolbarButton button);
@@ -54,6 +56,7 @@ private:
 	std::vector<Rect> m_selectedBounds;
 	bool m_canDelete = false;
 	std::optional<ShapeType> m_tool;
+	std::string m_title;
 
 	boost::signals2::scoped_connection m_viewModelConnection;
 };

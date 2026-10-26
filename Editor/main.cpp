@@ -1,17 +1,11 @@
-#include "Model/Picture.h"
-#include "View/SfmlEditorView.h"
-#include "ViewModel/EditorViewModel.h"
+#include "Model/Document.h"
+#include "View/EditorApp.h"
 
-#include <SFML/Graphics/RenderWindow.hpp>
+#include <memory>
 
 int main()
 {
-	sf::RenderWindow window(sf::VideoMode({ 1280, 800 }), "edirot");
-	window.setVerticalSyncEnabled(true);
-
-	editor::Picture picture;
-	editor::EditorViewModel viewModel(picture);
-	editor::SfmlEditorView view(window, viewModel);
-
-	view.Run();
+	editor::EditorApp app;
+	app.OpenWindow(std::make_shared<editor::Document>());
+	app.Run();
 }

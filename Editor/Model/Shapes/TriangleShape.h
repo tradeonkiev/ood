@@ -7,7 +7,6 @@
 namespace editor
 {
 
-// Равнобедренный треугольник, вписанный в рамку: вершина сверху посередине
 class TriangleShape : public Shape
 {
 public:

@@ -13,7 +13,6 @@
 namespace editor
 {
 
-// Документ: фигуры в порядке наложения, первая — самая нижняя
 class Picture
 {
 public:

@@ -17,7 +17,6 @@ public:
 	bool CanRedo() const;
 	void Undo();
 	void Redo();
-	void Clear();
 
 private:
 	std::vector<std::unique_ptr<ICommand>> m_commands;

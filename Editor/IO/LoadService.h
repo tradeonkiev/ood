@@ -10,7 +10,6 @@
 namespace editor
 {
 
-// Читает все фигуры целиком; при первой же ошибке бросает std::runtime_error
 class LoadService
 {
 public:

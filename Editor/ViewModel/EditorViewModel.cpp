@@ -30,8 +30,11 @@ std::string GetTypeName(ShapeType type)
 	return {};
 }
 
-EditorViewModel::EditorViewModel(Picture& picture)
-	: m_picture(picture)
+EditorViewModel::EditorViewModel(std::shared_ptr<Document> document, IWindowService& windows)
+	: m_document(std::move(document))
+	, m_windows(windows)
+	, m_picture(m_document->GetPicture())
+	, m_history(m_document->GetHistory())
 {
 	m_shapeRemovedConnection = m_picture.SubscribeToShapeRemoved([this](const Shape& shape) {
 		if (std::erase(m_state.selection, shape.GetId()) > 0)
@@ -57,6 +60,8 @@ std::vector<Rect> EditorViewModel::GetSelectedBounds() const
 bool EditorViewModel::CanDelete() const { return !m_state.selection.empty(); }
 
 std::optional<ShapeType> EditorViewModel::GetTool() const { return m_state.tool; }
+
+std::string EditorViewModel::GetTitle() const { return m_document->GetTitle(); }
 
 boost::signals2::connection EditorViewModel::SubscribeToChanged(const Signal::slot_type& handler)
 {
@@ -166,49 +171,28 @@ void EditorViewModel::Redo()
 	m_changedSignal();
 }
 
-std::optional<std::filesystem::path> EditorViewModel::GetFilePath() const { return m_filePath; }
-
-void EditorViewModel::NewDocument()
-{
-	ReplaceDocument({});
-	m_filePath.reset();
-}
-
-void EditorViewModel::OpenDocument(const std::filesystem::path& path)
-{
-	auto loadedShapes = DocumentIO::Load(path);
-	ReplaceDocument(std::move(loadedShapes));
-	m_filePath = path;
-}
+std::optional<std::filesystem::path> EditorViewModel::GetFilePath() const { return m_document->GetFilePath(); }
 
 void EditorViewModel::SaveDocument(const std::filesystem::path& path)
 {
 	FinishDrag();
 	DocumentIO::Save(m_picture, path);
-	m_filePath = path;
+	m_document->SetFilePath(path);
 }
 
-void EditorViewModel::ReplaceDocument(std::vector<std::unique_ptr<Shape>> newShapes)
+void EditorViewModel::NewDocument() { m_windows.OpenWindow(std::make_shared<Document>()); }
+
+void EditorViewModel::OpenDocument(const std::filesystem::path& path)
 {
-	FinishDrag();
-	m_state = EditorState{};
-	while (m_picture.GetShapeCount() > 0)
-	{
-		m_picture.DeleteShape(m_picture.GetShapeAt(0).GetId());
-	}
-	for (auto& shape : newShapes)
-	{
-		m_picture.AddShape(std::move(shape));
-	}
-	m_state.nextShapeId = m_picture.GetShapeCount() + 1;
-	m_history.Clear();
-	m_changedSignal();
+	m_windows.OpenWindow(std::make_shared<Document>(DocumentIO::Load(path), path));
 }
+
+void EditorViewModel::OpenNewWindow() { m_windows.OpenWindow(m_document); }
 
 void EditorViewModel::BeginCreate(const Point& point)
 {
 	m_state.dragStart = ClampToCanvas(point);
-	m_state.createdId = GenerateShapeId();
+	m_state.createdId = m_document->GenerateShapeId();
 	const Rect bounds = ClampToCanvas(MakeFrame(m_state.dragStart, m_state.dragStart));
 	m_picture.AddShape(
 		CreateShape(GetTypeName(*m_state.tool), m_state.createdId, Color{ 111, 222, 33 }, bounds));
@@ -362,8 +346,6 @@ void EditorViewModel::SetTool(std::optional<ShapeType> tool)
 	m_state.tool = tool;
 	m_changedSignal();
 }
-
-std::string EditorViewModel::GenerateShapeId() { return std::format("shape{}", m_state.nextShapeId++); }
 
 Point EditorViewModel::ClampToCanvas(const Point& point) const
 {

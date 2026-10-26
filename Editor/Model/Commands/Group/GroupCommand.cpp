@@ -19,7 +19,7 @@ void GroupCommand::Execute()
 
 void GroupCommand::Unexecute()
 {
-	for (auto it = m_commands.rbegin(); it != m_commands.rend(); ++it)
+	for (auto it = m_commands.rbegin(); it != m_commands.rend(); it++)
 	{
 		(*it)->Unexecute();
 	}

@@ -17,7 +17,7 @@ std::vector<std::unique_ptr<Shape>> LoadService::Load(std::istream& in)
 	int lineNumber = 0;
 	while (std::getline(in, line))
 	{
-		++lineNumber;
+		lineNumber++;
 		if (line.empty())
 		{
 			continue;

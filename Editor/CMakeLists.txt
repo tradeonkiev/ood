@@ -41,6 +41,7 @@ add_library(editor_app
         Model/Commands/DeleteShape/DeleteShapeCommand.cpp
         Model/Commands/Group/GroupCommand.cpp
         Model/Commands/History.cpp
+        Model/Document.cpp
         Model/Picture.cpp
         Model/ShapeFactory.cpp
         Model/Shapes/EllipseShape.cpp
@@ -55,6 +56,7 @@ target_compile_features(editor_app PUBLIC cxx_std_23)
 set_target_properties(editor_app PROPERTIES CXX_EXTENSIONS OFF)
 
 add_library(editor_sfml
+        View/EditorApp.cpp
         View/FileDialog.cpp
         View/SfmlCanvas.cpp
         View/SfmlEditorView.cpp)
@@ -63,3 +65,21 @@ target_link_libraries(editor_sfml PUBLIC editor_app SFML::Graphics comdlg32)
 
 add_executable(editor main.cpp)
 target_link_libraries(editor PRIVATE editor_sfml)
+
+include(CTest)
+if (BUILD_TESTING)
+    if (NOT TARGET GTest::gmock_main)
+        include(FetchContent)
+        FetchContent_Declare(
+                googletest
+                URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip)
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(googletest)
+    endif ()
+
+    add_executable(editor_tests tests/EditorTests.cpp)
+    target_link_libraries(editor_tests PRIVATE editor_app GTest::gmock_main)
+
+    include(GoogleTest)
+    gtest_discover_tests(editor_tests)
+endif ()

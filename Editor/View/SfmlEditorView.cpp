@@ -125,24 +125,22 @@ void SfmlEditorView::UpdateFromViewModel()
 	m_tool = m_viewModel.GetTool();
 }
 
-void SfmlEditorView::Run()
+void SfmlEditorView::ProcessEvents()
 {
-	while (m_window.isOpen())
+	while (const std::optional event = m_window.pollEvent())
 	{
-		while (const std::optional event = m_window.pollEvent())
-		{
-			HandleEvent(*event);
-		}
-
-		if (m_window.isOpen())
-		{
-			Render();
-		}
+		HandleEvent(*event);
 	}
 }
 
 void SfmlEditorView::Render()
 {
+	if (!m_window.isOpen())
+	{
+		return;
+	}
+
+	UpdateTitle();
 	m_viewModel.GetPicture().Draw(m_canvas);
 	for (const auto& frame : m_selectedBounds)
 	{
@@ -150,6 +148,16 @@ void SfmlEditorView::Render()
 	}
 	DrawToolbar();
 	m_window.display();
+}
+
+void SfmlEditorView::UpdateTitle()
+{
+	const std::string title = m_viewModel.GetTitle();
+	if (title != m_title)
+	{
+		m_title = title;
+		m_window.setTitle(sf::String::fromUtf8(title.begin(), title.end()));
+	}
 }
 
 void SfmlEditorView::HandleEvent(const sf::Event& event)
@@ -244,7 +252,7 @@ void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 		OpenDocument();
 		break;
 	case sf::Keyboard::Key::N:
-		m_viewModel.NewDocument();
+		key.shift ? m_viewModel.OpenNewWindow() : m_viewModel.NewDocument();
 		break;
 	default:
 		break;
