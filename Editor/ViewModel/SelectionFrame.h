@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Model/Geometry.h"
+#include "Geometry/Geometry.h"
 
 #include <array>
 #include <optional>

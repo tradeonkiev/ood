@@ -81,7 +81,7 @@ void EditorViewModel::MouseDown(const Point& point, bool toggleSelection)
 
 	if (m_state.tool)
 	{
-		BeginCreate(point);
+		StartCreate(point);
 	}
 	else if (!BeginResize(point))
 	{
@@ -189,7 +189,7 @@ void EditorViewModel::OpenDocument(const std::filesystem::path& path)
 
 void EditorViewModel::OpenNewWindow() { m_windows.OpenWindow(m_document); }
 
-void EditorViewModel::BeginCreate(const Point& point) // rename
+void EditorViewModel::StartCreate(const Point& point)
 {
 	m_state.dragStart = ClampToCanvas(point);
 	m_state.createdId = m_document->GenerateShapeId();

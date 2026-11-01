@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Model/Color.h"
-#include "Model/Geometry.h"
-#include "Model/ICanvas.h"
+#include "Canvas/Color.h"
+#include "Canvas/ICanvas.h"
+#include "Geometry/Geometry.h"
 
 #include <boost/signals2/connection.hpp>
 #include <boost/signals2/signal.hpp>

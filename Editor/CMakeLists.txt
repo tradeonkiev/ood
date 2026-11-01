@@ -56,9 +56,9 @@ target_compile_features(editor_app PUBLIC cxx_std_23)
 set_target_properties(editor_app PROPERTIES CXX_EXTENSIONS OFF)
 
 add_library(editor_sfml
+        Canvas/SfmlCanvas.cpp
         View/EditorApp.cpp
         View/FileDialog.cpp
-        View/SfmlCanvas.cpp
         View/SfmlEditorView.cpp)
 target_link_libraries(editor_sfml PUBLIC editor_app SFML::Graphics comdlg32)
 

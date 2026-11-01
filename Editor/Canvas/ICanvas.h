@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Model/Color.h"
-#include "Model/Geometry.h"
+#include "Canvas/Color.h"
+#include "Geometry/Geometry.h"
 
 #include <vector>
 

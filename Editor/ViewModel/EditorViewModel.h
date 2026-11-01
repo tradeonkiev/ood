@@ -75,7 +75,7 @@ public:
 	void OpenNewWindow();
 
 private:
-	void BeginCreate(const Point& point);
+	void StartCreate(const Point& point);
 	bool BeginResize(const Point& point);
 	void ClickShape(const Point& point, bool toggleSelection);
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Model/ICanvas.h"
+#include "Canvas/ICanvas.h"
 #include "Model/Shapes/Shape.h"
 
 #include <boost/signals2/connection.hpp>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Model/ICanvas.h"
+#include "Canvas/ICanvas.h"
 
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Shape.hpp>

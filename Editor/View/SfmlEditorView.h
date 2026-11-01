@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Canvas/SfmlCanvas.h"
 #include "View/FileDialog.h"
-#include "View/SfmlCanvas.h"
 #include "ViewModel/EditorViewModel.h"
 
 #include <SFML/Graphics/RenderWindow.hpp>
