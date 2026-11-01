@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Canvas/SfmlCanvas.h"
+#include "View/CanvasViewport.h"
 #include "View/ColorDialog.h"
 #include "View/FileDialog.h"
 #include "ViewModel/EditorViewModel.h"
@@ -35,10 +36,12 @@ public:
 
 private:
 	void Update();
-	void UpdateCanvasSize();
 	void UpdateTitle();
 	void HandleEvent(const sf::Event& event);
 	void HandleKey(const sf::Event::KeyPressed& key);
+	void Zoom(double factor);
+	void MoveView(double dx, double dy);
+	void OnViewportChanged();
 	void HandleToolbarButton(ToolbarButton button);
 	void SaveDocument();
 	void OpenDocument();
@@ -47,11 +50,13 @@ private:
 	bool IsButtonEnabled(ToolbarButton button) const;
 	void DrawSelection(const Rect& frame);
 	void DrawToolbar();
+	void DrawZoom();
 
 	Point ToPicturePoint(sf::Vector2i position) const;
 	std::optional<ToolbarButton> FindToolbarButton(sf::Vector2i position) const;
 
 	sf::RenderWindow& m_window;
+	CanvasViewport m_viewport;
 	SfmlCanvas m_canvas;
 	EditorViewModel& m_viewModel;
 	FileDialog m_fileDialog;

@@ -1,0 +1,28 @@
+#pragma once
+
+#include "Geometry/Geometry.h"
+
+namespace editor
+{
+
+class CanvasViewport
+{
+public:
+	static constexpr double MinZoom = 0.1;
+	static constexpr double MaxZoom = 10;
+
+	double GetZoom() const;
+	Point GetOffset() const;
+
+	Point ToPicture(const Point& screen) const;
+	Point ToScreen(const Point& picture) const;
+
+	void ZoomAt(const Point& anchor, double factor);
+	void MoveView(double dx, double dy);
+
+private:
+	double m_zoom = 1;
+	Point m_offset;
+};
+
+} // namespace editor

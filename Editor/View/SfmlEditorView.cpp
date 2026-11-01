@@ -4,11 +4,14 @@
 
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/ConvexShape.hpp>
+#include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/Text.hpp>
 #include <SFML/Graphics/View.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <iostream>
 
 namespace editor
@@ -17,6 +20,11 @@ namespace editor
 float ToolbarHeight = 48;
 float ButtonSize = 40;
 float ButtonSpacing = 8;
+double ZoomStep = 1.1;
+double MoveViewStep = 20;
+double SheetWidth = 1280;
+double SheetHeight = 752;
+
 std::array<ToolbarButton, 6> ToolbarButtons{ ToolbarButton::Rectangle, ToolbarButton::Ellipse,
 	ToolbarButton::Triangle, ToolbarButton::Delete, ToolbarButton::FillColor, ToolbarButton::StrokeColor };
 
@@ -39,7 +47,7 @@ sf::RectangleShape MakeOutlinedRect(sf::Vector2f position, sf::Vector2f size, sf
 void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f buttonPosition, bool enabled,
 	const std::optional<ShapeStyle>& style)
 {
-	constexpr float Padding = 10;
+	float Padding = 10;
 	const sf::Vector2f topLeft = buttonPosition + sf::Vector2f(Padding, Padding);
 	const float size = ButtonSize - 2 * Padding;
 	const sf::Color iconColor = enabled ? sf::Color(40, 40, 40) : sf::Color(180, 180, 180);
@@ -117,20 +125,15 @@ std::optional<ShapeType> GetShapeType(ToolbarButton button)
 
 SfmlEditorView::SfmlEditorView(sf::RenderWindow& window, EditorViewModel& viewModel)
 	: m_window(window)
-	, m_canvas(window, { 0, ToolbarHeight })
+	, m_canvas(window, { 0, ToolbarHeight }, m_viewport)
 	, m_viewModel(viewModel)
 	, m_fileDialog(window.getNativeHandle())
 	, m_colorDialog(window.getNativeHandle())
 {
 	m_viewModelConnection = m_viewModel.SubscribeToChanged([this] { Update(); });
 	Update();
-	UpdateCanvasSize();
-}
-
-void SfmlEditorView::UpdateCanvasSize()
-{
-	const auto size = m_window.getSize();
-	m_viewModel.SetCanvasSize(size.x, std::max(0.0, size.y - static_cast<double>(ToolbarHeight)));
+	m_viewModel.SetCanvasSize(SheetWidth, SheetHeight);
+	m_canvas.SetSheetSize(SheetWidth, SheetHeight);
 }
 
 void SfmlEditorView::Update()
@@ -186,7 +189,6 @@ void SfmlEditorView::HandleEvent(const sf::Event& event)
 	else if (const auto* resized = event.getIf<sf::Event::Resized>())
 	{
 		m_window.setView(sf::View(sf::FloatRect({ 0, 0 }, sf::Vector2f(resized->size))));
-		UpdateCanvasSize();
 	}
 	else if (const auto* pressed = event.getIf<sf::Event::MouseButtonPressed>())
 	{
@@ -233,6 +235,25 @@ void SfmlEditorView::HandleEvent(const sf::Event& event)
 	}
 }
 
+void SfmlEditorView::Zoom(double zoomScale)
+{
+	const auto size = m_window.getSize();
+	m_viewport.ZoomAt({ size.x / 2.0, (size.y - static_cast<double>(ToolbarHeight)) / 2 }, zoomScale);
+	OnViewportChanged();
+}
+
+void SfmlEditorView::MoveView(double dx, double dy)
+{
+	m_viewport.MoveView(dx, dy);
+	OnViewportChanged();
+}
+
+void SfmlEditorView::OnViewportChanged()
+{
+	m_lastMousePoint = ToPicturePoint(sf::Mouse::getPosition(m_window));
+	m_viewModel.MouseMove(m_lastMousePoint);
+}
+
 void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 {
 
@@ -269,6 +290,26 @@ void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 		break;
 	case sf::Keyboard::Key::N:
 		key.shift ? m_viewModel.OpenNewWindow() : m_viewModel.NewDocument();
+		break;
+	case sf::Keyboard::Key::Equal:
+	case sf::Keyboard::Key::Add:
+		Zoom(ZoomStep);
+		break;
+	case sf::Keyboard::Key::Hyphen:
+	case sf::Keyboard::Key::Subtract:
+		Zoom(1 / ZoomStep);
+		break;
+	case sf::Keyboard::Key::Left:
+		MoveView(MoveViewStep, 0);
+		break;
+	case sf::Keyboard::Key::Right:
+		MoveView(-MoveViewStep, 0);
+		break;
+	case sf::Keyboard::Key::Up:
+		MoveView(0, MoveViewStep);
+		break;
+	case sf::Keyboard::Key::Down:
+		MoveView(0, -MoveViewStep);
 		break;
 	default:
 		break;
@@ -378,9 +419,11 @@ bool SfmlEditorView::IsButtonEnabled(ToolbarButton button) const
 
 void SfmlEditorView::DrawSelection(const Rect& frame)
 {
-	const auto toWindow = [](const Rect& rect) {
-		return std::pair{ sf::Vector2f(static_cast<float>(rect.left), static_cast<float>(rect.top) + ToolbarHeight),
-			sf::Vector2f(static_cast<float>(rect.width), static_cast<float>(rect.height)) };
+	const auto toWindow = [this](const Rect& rect) {
+		const Point topLeft = m_viewport.ToScreen({ rect.left, rect.top });
+		const float zoom = static_cast<float>(m_viewport.GetZoom());
+		return std::pair{ sf::Vector2f(static_cast<float>(topLeft.x), static_cast<float>(topLeft.y) + ToolbarHeight),
+			sf::Vector2f(static_cast<float>(rect.width) * zoom, static_cast<float>(rect.height) * zoom) };
 	};
 
 	const auto [framePosition, frameSize] = toWindow(frame);
@@ -413,11 +456,31 @@ void SfmlEditorView::DrawToolbar()
 		m_window.draw(MakeOutlinedRect(position, { ButtonSize, ButtonSize }, sf::Color(0, 0, 0), fill));
 		DrawButtonIcon(m_window, button, position, enabled, m_selectedStyle);
 	}
+	DrawZoom();
+}
+
+void SfmlEditorView::DrawZoom()
+{
+	static sf::Font font;
+	static const bool hasFont = font.openFromFile("C:/Windows/Fonts/segoeui.ttf");
+	if (!hasFont)
+	{
+		return;
+	}
+
+	const long percent = std::lround(m_viewport.GetZoom() * 100);
+	sf::Text text(font, std::to_string(percent) + "%", 16);
+	text.setFillColor(sf::Color(40, 40, 40));
+
+	const sf::FloatRect bounds = text.getLocalBounds();
+	text.setPosition({ static_cast<float>(m_window.getSize().x) - bounds.size.x - bounds.position.x - 2 * ButtonSpacing,
+		(ToolbarHeight - bounds.size.y) / 2 - bounds.position.y });
+	m_window.draw(text);
 }
 
 Point SfmlEditorView::ToPicturePoint(sf::Vector2i position) const
 {
-	return { static_cast<double>(position.x), static_cast<double>(position.y) - ToolbarHeight };
+	return m_viewport.ToPicture({ static_cast<double>(position.x), static_cast<double>(position.y) - ToolbarHeight });
 }
 
 std::optional<ToolbarButton> SfmlEditorView::FindToolbarButton(sf::Vector2i position) const

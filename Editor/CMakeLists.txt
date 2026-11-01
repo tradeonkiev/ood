@@ -49,6 +49,7 @@ add_library(editor_app
         Model/Shapes/RectangleShape.cpp
         Model/Shapes/Shape.cpp
         Model/Shapes/TriangleShape.cpp
+        View/CanvasViewport.cpp
         ViewModel/EditorViewModel.cpp
         ViewModel/SelectionFrame.cpp)
 target_include_directories(editor_app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

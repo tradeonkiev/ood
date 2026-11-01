@@ -7,6 +7,7 @@
 #include "Model/Document.h"
 #include "Model/Picture.h"
 #include "Model/ShapeFactory.h"
+#include "View/CanvasViewport.h"
 #include "ViewModel/EditorViewModel.h"
 #include "ViewModel/IWindowService.h"
 
@@ -276,4 +277,47 @@ TEST(DocumentIOTest, SaveAndLoadKeepTypesBoundsColorsAndOrder)
 		EXPECT_EQ(loaded[i]->GetBounds(), picture.GetShapeAt(i).GetBounds());
 		EXPECT_EQ(loaded[i]->GetStyle(), picture.GetShapeAt(i).GetStyle());
 	}
+}
+
+TEST(CanvasViewportTest, DefaultViewportMapsPointsAsIs)
+{
+	const CanvasViewport viewport;
+
+	EXPECT_EQ(viewport.ToPicture({ 10, 20 }), (Point{ 10, 20 }));
+	EXPECT_EQ(viewport.ToScreen({ 10, 20 }), (Point{ 10, 20 }));
+}
+
+TEST(CanvasViewportTest, ZoomKeepsPointUnderAnchor)
+{
+	CanvasViewport viewport;
+	const Point anchor{ 100, 50 };
+	const Point before = viewport.ToPicture(anchor);
+
+	viewport.ZoomAt(anchor, 2);
+
+	EXPECT_DOUBLE_EQ(viewport.GetZoom(), 2);
+	EXPECT_EQ(viewport.ToPicture(anchor), before);
+	EXPECT_EQ(viewport.ToScreen({ 110, 50 }), (Point{ 120, 50 }));
+}
+
+TEST(CanvasViewportTest, ZoomIsClamped)
+{
+	CanvasViewport viewport;
+
+	viewport.ZoomAt({ 0, 0 }, 1000);
+	EXPECT_DOUBLE_EQ(viewport.GetZoom(), CanvasViewport::MaxZoom);
+
+	viewport.ZoomAt({ 0, 0 }, 0.00001);
+	EXPECT_DOUBLE_EQ(viewport.GetZoom(), CanvasViewport::MinZoom);
+}
+
+TEST(CanvasViewportTest, MoveViewIsMeasuredInScreenPixels)
+{
+	CanvasViewport viewport;
+	viewport.ZoomAt({ 0, 0 }, 2);
+
+	viewport.MoveView(40, -20);
+
+	EXPECT_EQ(viewport.GetOffset(), (Point{ 20, -10 }));
+	EXPECT_EQ(viewport.ToScreen({ 20, -10 }), (Point{ 0, 0 }));
 }
