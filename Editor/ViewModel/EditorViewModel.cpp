@@ -1,10 +1,10 @@
 #include "EditorViewModel.h"
 
+#include "IO/DocumentIO.h"
 #include "Model/Commands/AddShape/AddShapeCommand.h"
 #include "Model/Commands/ChangeBounds/ChangeBoundsCommand.h"
 #include "Model/Commands/DeleteShape/DeleteShapeCommand.h"
 #include "Model/Commands/Group/GroupCommand.h"
-#include "IO/DocumentIO.h"
 #include "Model/ShapeFactory.h"
 
 #include <algorithm>
@@ -189,7 +189,7 @@ void EditorViewModel::OpenDocument(const std::filesystem::path& path)
 
 void EditorViewModel::OpenNewWindow() { m_windows.OpenWindow(m_document); }
 
-void EditorViewModel::BeginCreate(const Point& point)
+void EditorViewModel::BeginCreate(const Point& point) // rename
 {
 	m_state.dragStart = ClampToCanvas(point);
 	m_state.createdId = m_document->GenerateShapeId();
