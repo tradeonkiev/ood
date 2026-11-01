@@ -27,9 +27,12 @@ public:
 
 	virtual std::string GetType() const = 0;
 	virtual bool ContainsPoint(const Point& point) const = 0;
-	virtual void Draw(ICanvas& canvas) const = 0;
+	void Draw(ICanvas& canvas) const;
 
 	boost::signals2::connection SubscribeToChanged(const ChangedSignal::slot_type& handler);
+
+protected:
+	virtual void DrawGeometry(ICanvas& canvas) const = 0;
 
 private:
 	std::string m_id;

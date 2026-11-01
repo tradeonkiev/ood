@@ -12,10 +12,8 @@ bool RectangleShape::ContainsPoint(const Point& point) const
 	return point.x >= bounds.left && point.x <= bounds.Right() && point.y >= bounds.top && point.y <= bounds.Bottom();
 }
 
-void RectangleShape::Draw(ICanvas& canvas) const
+void RectangleShape::DrawGeometry(ICanvas& canvas) const
 {
-	canvas.SetFillColor(GetStyle().fillColor);
-	canvas.SetStrokeColor(GetStyle().strokeColor);
 	canvas.DrawRectangle(GetBounds());
 }
 

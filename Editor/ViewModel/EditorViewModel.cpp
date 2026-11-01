@@ -45,6 +45,7 @@ EditorViewModel::EditorViewModel(std::shared_ptr<Document> document, IWindowServ
 			m_changedSignal();
 		}
 	});
+
 	m_shapeChangedConnection = m_picture.SubscribeToShapeChanged([this](const Shape&) { m_changedSignal(); });
 }
 
@@ -57,6 +58,7 @@ std::vector<Rect> EditorViewModel::GetSelectedBounds() const
 	{
 		bounds.push_back(m_picture.GetShape(id).GetBounds());
 	}
+
 	return bounds;
 }
 
@@ -367,10 +369,7 @@ void EditorViewModel::CommitBoundsChange()
 		}
 	}
 
-	if (!group->IsEmpty())
-	{
-		Execute(std::move(group));
-	}
+	Execute(std::move(group));
 }
 
 void EditorViewModel::Execute(std::unique_ptr<ICommand> command)

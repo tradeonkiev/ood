@@ -16,11 +16,9 @@ bool EllipseShape::ContainsPoint(const Point& point) const
 	return dx * dx + dy * dy <= 1;
 }
 
-void EllipseShape::Draw(ICanvas& canvas) const
+void EllipseShape::DrawGeometry(ICanvas& canvas) const
 {
 	const Rect bounds = GetBounds();
-	canvas.SetFillColor(GetStyle().fillColor);
-	canvas.SetStrokeColor(GetStyle().strokeColor);
 	canvas.DrawEllipse(
 		{ bounds.left + bounds.width / 2, bounds.top + bounds.height / 2 }, bounds.width / 2, bounds.height / 2);
 }

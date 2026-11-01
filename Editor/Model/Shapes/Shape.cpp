@@ -30,6 +30,13 @@ void Shape::SetBounds(const Rect& bounds)
 	m_changedSignal(*this);
 }
 
+void Shape::Draw(ICanvas& canvas) const
+{
+	canvas.SetFillColor(m_style.fillColor);
+	canvas.SetStrokeColor(m_style.strokeColor);
+	DrawGeometry(canvas);
+}
+
 boost::signals2::connection Shape::SubscribeToChanged(const ChangedSignal::slot_type& handler)
 {
 	return m_changedSignal.connect(handler);

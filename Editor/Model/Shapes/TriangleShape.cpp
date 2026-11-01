@@ -22,11 +22,9 @@ bool TriangleShape::ContainsPoint(const Point& point) const
 	return !(hasNegative && hasPositive);
 }
 
-void TriangleShape::Draw(ICanvas& canvas) const
+void TriangleShape::DrawGeometry(ICanvas& canvas) const
 {
 	const auto vertices = GetVertices();
-	canvas.SetFillColor(GetStyle().fillColor);
-	canvas.SetStrokeColor(GetStyle().strokeColor);
 	canvas.DrawPolygon({ vertices.begin(), vertices.end() });
 }
 
