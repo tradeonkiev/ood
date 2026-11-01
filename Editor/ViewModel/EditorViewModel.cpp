@@ -3,6 +3,7 @@
 #include "IO/DocumentIO.h"
 #include "Model/Commands/AddShape/AddShapeCommand.h"
 #include "Model/Commands/ChangeBounds/ChangeBoundsCommand.h"
+#include "Model/Commands/ChangeStyle/ChangeStyleCommand.h"
 #include "Model/Commands/DeleteShape/DeleteShapeCommand.h"
 #include "Model/Commands/Group/GroupCommand.h"
 #include "Model/ShapeFactory.h"
@@ -15,6 +16,8 @@
 
 namespace editor
 {
+
+const ShapeStyle DefaultStyle{ Color{ 111, 222, 33 }, Color{ 0, 0, 0 } };
 
 std::string GetTypeName(ShapeType type)
 {
@@ -58,6 +61,16 @@ std::vector<Rect> EditorViewModel::GetSelectedBounds() const
 }
 
 bool EditorViewModel::CanDelete() const { return !m_state.selection.empty(); }
+
+std::optional<ShapeStyle> EditorViewModel::GetSelectedStyle() const
+{
+	if (m_state.selection.empty())
+	{
+		return std::nullopt;
+	}
+
+	return m_picture.GetShape(m_state.selection.front()).GetStyle();
+}
 
 std::optional<ShapeType> EditorViewModel::GetTool() const { return m_state.tool; }
 
@@ -155,6 +168,16 @@ void EditorViewModel::DeleteSelected()
 	Execute(std::move(group));
 }
 
+void EditorViewModel::SetFillColor(Color color)
+{
+	ChangeSelectedStyle([color](ShapeStyle& style) { style.fillColor = color; });
+}
+
+void EditorViewModel::SetStrokeColor(Color color)
+{
+	ChangeSelectedStyle([color](ShapeStyle& style) { style.strokeColor = color; });
+}
+
 void EditorViewModel::Undo()
 {
 	FinishDrag();
@@ -195,7 +218,7 @@ void EditorViewModel::StartCreate(const Point& point)
 	m_state.createdId = m_document->GenerateShapeId();
 	const Rect bounds = ClampToCanvas(MakeFrame(m_state.dragStart, m_state.dragStart));
 	m_picture.AddShape(
-		CreateShape(GetTypeName(*m_state.tool), m_state.createdId, Color{ 111, 222, 33 }, bounds));
+		CreateShape(GetTypeName(*m_state.tool), m_state.createdId, DefaultStyle, bounds));
 	SetSelection({ m_state.createdId });
 	m_state.mode = Mode::Create;
 }
@@ -284,6 +307,27 @@ void EditorViewModel::ResizeSelection(const Point& point)
 		const Point corner = GetCorner(bounds, m_state.resizeCorner);
 		const Point target = ClampToCanvas(Point{ corner.x + dx, corner.y + dy });
 		m_picture.GetShape(id).SetBounds(ClampToCanvas(ResizeFrame(bounds, m_state.resizeCorner, target)));
+	}
+}
+
+void EditorViewModel::ChangeSelectedStyle(const std::function<void(ShapeStyle& style)>& change)
+{
+	FinishDrag();
+	auto group = std::make_unique<GroupCommand>();
+	for (const auto& id : m_state.selection)
+	{
+		const ShapeStyle oldStyle = m_picture.GetShape(id).GetStyle();
+		ShapeStyle newStyle = oldStyle;
+		change(newStyle);
+		if (newStyle != oldStyle)
+		{
+			group->Add(std::make_unique<ChangeStyleCommand>(m_picture, id, oldStyle, newStyle));
+		}
+	}
+
+	if (!group->IsEmpty())
+	{
+		Execute(std::move(group));
 	}
 }
 

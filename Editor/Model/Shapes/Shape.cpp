@@ -5,16 +5,22 @@
 namespace editor
 {
 
-Shape::Shape(std::string id, Color color, Rect bounds)
+Shape::Shape(std::string id, ShapeStyle style, Rect bounds)
 	: m_id(std::move(id))
-	, m_color(color)
+	, m_style(style)
 	, m_bounds(bounds)
 {
 }
 
 const std::string& Shape::GetId() const { return m_id; }
 
-Color Shape::GetColor() const { return m_color; }
+ShapeStyle Shape::GetStyle() const { return m_style; }
+
+void Shape::SetStyle(const ShapeStyle& style)
+{
+	m_style = style;
+	m_changedSignal(*this);
+}
 
 Rect Shape::GetBounds() const { return m_bounds; }
 

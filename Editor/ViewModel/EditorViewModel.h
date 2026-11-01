@@ -6,6 +6,7 @@
 #include <boost/signals2/connection.hpp>
 #include <boost/signals2/signal.hpp>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -52,6 +53,7 @@ public:
 	const Picture& GetPicture() const;
 	std::vector<Rect> GetSelectedBounds() const;
 	bool CanDelete() const;
+	std::optional<ShapeStyle> GetSelectedStyle() const;
 	std::optional<ShapeType> GetTool() const;
 	std::string GetTitle() const;
 
@@ -65,6 +67,8 @@ public:
 
 	void SelectTool(ShapeType tool);
 	void DeleteSelected();
+	void SetFillColor(Color color);
+	void SetStrokeColor(Color color);
 	void Undo();
 	void Redo();
 
@@ -82,6 +86,8 @@ private:
 	void ResizeCreatedShape(const Point& point);
 	void MoveSelection(const Point& point);
 	void ResizeSelection(const Point& point);
+
+	void ChangeSelectedStyle(const std::function<void(ShapeStyle& style)>& change);
 
 	void FinishDrag();
 	void SaveBoundsBeforeDrag();

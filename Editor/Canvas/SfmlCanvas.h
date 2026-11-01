@@ -11,13 +11,16 @@
 namespace editor
 {
 
+sf::Color ToSfmlColor(Color color);
+
 class SfmlCanvas : public ICanvas
 {
 public:
 	SfmlCanvas(sf::RenderTarget& target, sf::Vector2f origin);
 
 	void Clear() override;
-	void SetColor(Color color) override;
+	void SetFillColor(Color color) override;
+	void SetStrokeColor(Color color) override;
 	void DrawRectangle(const Rect& bounds) override;
 	void DrawPolygon(const std::vector<Point>& vertices) override;
 	void DrawEllipse(Point center, double radiusX, double radiusY) override;
@@ -28,7 +31,8 @@ private:
 
 	sf::RenderTarget& m_target;
 	sf::Vector2f m_origin;
-	sf::Color m_color = sf::Color::Black;
+	sf::Color m_fillColor = sf::Color::White;
+	sf::Color m_strokeColor = sf::Color::Black;
 };
 
 } // namespace editor

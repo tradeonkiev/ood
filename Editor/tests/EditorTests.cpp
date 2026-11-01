@@ -71,7 +71,7 @@ protected:
 	{
 		for (const char* id : { "a", "b", "c" })
 		{
-			picture.AddShape(CreateShape("rectangle", id, Color{}, { 0, 0, 10, 10 }));
+			picture.AddShape(CreateShape("rectangle", id, ShapeStyle{}, { 0, 0, 10, 10 }));
 		}
 	}
 
@@ -197,7 +197,7 @@ TEST_F(HistoryTest, RedoAtEndOfHistoryDoesNothing)
 TEST_F(CommandUndoTest, UndoAddRemovesShapeAndRedoReturnsIt)
 {
 	history.Execute(
-		std::make_unique<AddShapeCommand>(picture, CreateShape("rectangle", "a", Color{}, { 5, 6, 70, 80 })));
+		std::make_unique<AddShapeCommand>(picture, CreateShape("rectangle", "a", ShapeStyle{}, { 5, 6, 70, 80 })));
 
 	history.Undo();
 	EXPECT_EQ(picture.GetShapeCount(), 0);
@@ -209,7 +209,7 @@ TEST_F(CommandUndoTest, UndoAddRemovesShapeAndRedoReturnsIt)
 
 TEST_F(CommandUndoTest, UndoDeleteRestoresShape)
 {
-	picture.AddShape(CreateShape("ellipse", "e", Color{ 10, 20, 30 }, { 1, 2, 30, 40 }));
+	picture.AddShape(CreateShape("ellipse", "e", ShapeStyle{ { 10, 20, 30 }, { 40, 50, 60 } }, { 1, 2, 30, 40 }));
 
 	history.Execute(std::make_unique<DeleteShapeCommand>(picture, "e"));
 	EXPECT_EQ(picture.GetShapeCount(), 0);
@@ -219,7 +219,7 @@ TEST_F(CommandUndoTest, UndoDeleteRestoresShape)
 	const Shape& shape = picture.GetShape("e");
 	EXPECT_EQ(shape.GetType(), "ellipse");
 	EXPECT_EQ(shape.GetBounds(), (Rect{ 1, 2, 30, 40 }));
-	EXPECT_EQ(shape.GetColor(), (Color{ 10, 20, 30 }));
+	EXPECT_EQ(shape.GetStyle(), (ShapeStyle{ { 10, 20, 30 }, { 40, 50, 60 } }));
 }
 
 TEST_F(CommandUndoTest, UndoDeleteKeepsShapeOrder)
@@ -261,9 +261,9 @@ TEST_F(EditorViewModelTest, UndoResizeRestoresBounds)
 TEST(DocumentIOTest, SaveAndLoadKeepTypesBoundsColorsAndOrder)
 {
 	Picture picture;
-	picture.AddShape(CreateShape("rectangle", "r", Color{ 255, 0, 16 }, { 10, 20, 100, 50 }));
-	picture.AddShape(CreateShape("ellipse", "e", Color{ 0, 128, 0 }, { 200.5, 200, 80, 40 }));
-	picture.AddShape(CreateShape("triangle", "t", Color{ 1, 2, 3 }, { 300, 100, 60, 90 }));
+	picture.AddShape(CreateShape("rectangle", "r", ShapeStyle{ { 255, 0, 16 }, { 0, 0, 0 } }, { 10, 20, 100, 50 }));
+	picture.AddShape(CreateShape("ellipse", "e", ShapeStyle{ { 0, 128, 0 }, { 255, 255, 255 } }, { 200.5, 200, 80, 40 }));
+	picture.AddShape(CreateShape("triangle", "t", ShapeStyle{ { 1, 2, 3 }, { 4, 5, 6 } }, { 300, 100, 60, 90 }));
 
 	std::stringstream stream;
 	SaveService::Save(picture, stream);
@@ -274,6 +274,6 @@ TEST(DocumentIOTest, SaveAndLoadKeepTypesBoundsColorsAndOrder)
 	{
 		EXPECT_EQ(loaded[i]->GetType(), picture.GetShapeAt(i).GetType());
 		EXPECT_EQ(loaded[i]->GetBounds(), picture.GetShapeAt(i).GetBounds());
-		EXPECT_EQ(loaded[i]->GetColor(), picture.GetShapeAt(i).GetColor());
+		EXPECT_EQ(loaded[i]->GetStyle(), picture.GetShapeAt(i).GetStyle());
 	}
 }

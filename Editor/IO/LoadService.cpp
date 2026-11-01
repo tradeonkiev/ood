@@ -40,11 +40,12 @@ std::unique_ptr<Shape> LoadService::ParseLine(const std::string& line, const std
 {
 	std::istringstream iss(line);
 	std::string type;
-	std::string color;
+	std::string fillColor;
+	std::string strokeColor;
 	Rect bounds;
-	if (!(iss >> type >> color >> bounds.left >> bounds.top >> bounds.width >> bounds.height))
+	if (!(iss >> type >> fillColor >> strokeColor >> bounds.left >> bounds.top >> bounds.width >> bounds.height))
 	{
-		throw std::runtime_error("неверный формат, ожидается: тип #цвет left top width height");
+		throw std::runtime_error("неверный формат, ожидается: тип #заливка #обводка left top width height");
 	}
 
 	std::string extra;
@@ -57,7 +58,7 @@ std::unique_ptr<Shape> LoadService::ParseLine(const std::string& line, const std
 		throw std::runtime_error("ширина и высота должны быть больше нуля");
 	}
 
-	return CreateShape(type, id, ParseColor(color), bounds);
+	return CreateShape(type, id, { ParseColor(fillColor), ParseColor(strokeColor) }, bounds);
 }
 
 Color LoadService::ParseColor(const std::string& text)

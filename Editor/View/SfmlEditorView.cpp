@@ -17,9 +17,8 @@ namespace editor
 float ToolbarHeight = 48;
 float ButtonSize = 40;
 float ButtonSpacing = 8;
-std::array<ToolbarButton, 4> ToolbarButtons{
-	ToolbarButton::Rectangle, ToolbarButton::Ellipse, ToolbarButton::Triangle, ToolbarButton::Delete
-};
+std::array<ToolbarButton, 6> ToolbarButtons{ ToolbarButton::Rectangle, ToolbarButton::Ellipse,
+	ToolbarButton::Triangle, ToolbarButton::Delete, ToolbarButton::FillColor, ToolbarButton::StrokeColor };
 
 sf::Vector2f GetButtonPosition(int index)
 {
@@ -37,7 +36,8 @@ sf::RectangleShape MakeOutlinedRect(sf::Vector2f position, sf::Vector2f size, sf
 	return rect;
 }
 
-void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f buttonPosition, bool enabled)
+void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f buttonPosition, bool enabled,
+	const std::optional<ShapeStyle>& style)
 {
 	constexpr float Padding = 10;
 	const sf::Vector2f topLeft = buttonPosition + sf::Vector2f(Padding, Padding);
@@ -82,10 +82,22 @@ void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f
 		}
 		break;
 	}
+	case ToolbarButton::FillColor: {
+		const sf::Color fill = style ? ToSfmlColor(style->fillColor) : sf::Color(230, 230, 230);
+		target.draw(MakeOutlinedRect(topLeft, { size, size }, iconColor, fill));
+		break;
+	}
+	case ToolbarButton::StrokeColor: {
+		auto frame = MakeOutlinedRect(topLeft + sf::Vector2f(2, 2), { size - 4, size - 4 },
+			style ? ToSfmlColor(style->strokeColor) : iconColor, sf::Color::Transparent);
+		frame.setOutlineThickness(4);
+		target.draw(frame);
+		break;
+	}
 	}
 }
 
-std::optional<ShapeType> ToShapeType(ToolbarButton button)
+std::optional<ShapeType> GetShapeType(ToolbarButton button)
 {
 	switch (button)
 	{
@@ -96,6 +108,8 @@ std::optional<ShapeType> ToShapeType(ToolbarButton button)
 	case ToolbarButton::Triangle:
 		return ShapeType::Triangle;
 	case ToolbarButton::Delete:
+	case ToolbarButton::FillColor:
+	case ToolbarButton::StrokeColor:
 		return std::nullopt;
 	}
 	return std::nullopt;
@@ -106,6 +120,7 @@ SfmlEditorView::SfmlEditorView(sf::RenderWindow& window, EditorViewModel& viewMo
 	, m_canvas(window, { 0, ToolbarHeight })
 	, m_viewModel(viewModel)
 	, m_fileDialog(window.getNativeHandle())
+	, m_colorDialog(window.getNativeHandle())
 {
 	m_viewModelConnection = m_viewModel.SubscribeToChanged([this] { Update(); });
 	Update();
@@ -122,6 +137,7 @@ void SfmlEditorView::Update()
 {
 	m_selectedBounds = m_viewModel.GetSelectedBounds();
 	m_canDelete = m_viewModel.CanDelete();
+	m_selectedStyle = m_viewModel.GetSelectedStyle();
 	m_tool = m_viewModel.GetTool();
 }
 
@@ -299,19 +315,65 @@ void SfmlEditorView::OpenDocument()
 	}
 }
 
-void SfmlEditorView::HandleToolbarButton(ToolbarButton button)
+void SfmlEditorView::ChooseFillColor()
 {
-	if (button == ToolbarButton::Delete)
+	if (!m_selectedStyle)
 	{
-		m_viewModel.DeleteSelected();
 		return;
 	}
-	m_viewModel.SelectTool(*ToShapeType(button));
+
+	m_mouseCaptured = false;
+	if (const auto color = m_colorDialog.AskColor(m_selectedStyle->fillColor))
+	{
+		m_viewModel.SetFillColor(*color);
+	}
+}
+
+void SfmlEditorView::ChooseStrokeColor()
+{
+	if (!m_selectedStyle)
+	{
+		return;
+	}
+
+	m_mouseCaptured = false;
+	if (const auto color = m_colorDialog.AskColor(m_selectedStyle->strokeColor))
+	{
+		m_viewModel.SetStrokeColor(*color);
+	}
+}
+
+void SfmlEditorView::HandleToolbarButton(ToolbarButton button)
+{
+	switch (button)
+	{
+	case ToolbarButton::Delete:
+		m_viewModel.DeleteSelected();
+		break;
+	case ToolbarButton::FillColor:
+		ChooseFillColor();
+		break;
+	case ToolbarButton::StrokeColor:
+		ChooseStrokeColor();
+		break;
+	default:
+		m_viewModel.SelectTool(*GetShapeType(button));
+		break;
+	}
 }
 
 bool SfmlEditorView::IsButtonEnabled(ToolbarButton button) const
 {
-	return button != ToolbarButton::Delete || m_canDelete;
+	switch (button)
+	{
+	case ToolbarButton::Delete:
+		return m_canDelete;
+	case ToolbarButton::FillColor:
+	case ToolbarButton::StrokeColor:
+		return m_selectedStyle.has_value();
+	default:
+		return true;
+	}
 }
 
 void SfmlEditorView::DrawSelection(const Rect& frame)
@@ -344,12 +406,12 @@ void SfmlEditorView::DrawToolbar()
 		const bool enabled = IsButtonEnabled(button);
 		const sf::Vector2f position = GetButtonPosition(i);
 		sf::Color fill = enabled && hovered == button ? sf::Color(220, 220, 220) : sf::Color(250, 250, 250);
-		if (m_tool && ToShapeType(button) == m_tool)
+		if (m_tool && GetShapeType(button) == m_tool)
 		{
 			fill = sf::Color(190, 215, 245);
 		}
 		m_window.draw(MakeOutlinedRect(position, { ButtonSize, ButtonSize }, sf::Color(0, 0, 0), fill));
-		DrawButtonIcon(m_window, button, position, enabled);
+		DrawButtonIcon(m_window, button, position, enabled, m_selectedStyle);
 	}
 }
 

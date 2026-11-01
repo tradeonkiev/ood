@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Canvas/Color.h"
 #include "Canvas/ICanvas.h"
 #include "Geometry/Geometry.h"
+#include "Model/Shapes/ShapeStyle.h"
 
 #include <boost/signals2/connection.hpp>
 #include <boost/signals2/signal.hpp>
@@ -16,11 +16,12 @@ class Shape
 public:
 	using ChangedSignal = boost::signals2::signal<void(const Shape& shape)>;
 
-	Shape(std::string id, Color color, Rect bounds);
+	Shape(std::string id, ShapeStyle style, Rect bounds);
 	virtual ~Shape() = default;
 
 	const std::string& GetId() const;
-	Color GetColor() const;
+	ShapeStyle GetStyle() const;
+	void SetStyle(const ShapeStyle& style);
 	Rect GetBounds() const;
 	void SetBounds(const Rect& bounds);
 
@@ -32,7 +33,7 @@ public:
 
 private:
 	std::string m_id;
-	Color m_color;
+	ShapeStyle m_style;
 	Rect m_bounds;
 	ChangedSignal m_changedSignal;
 };

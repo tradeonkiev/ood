@@ -9,8 +9,9 @@ void SaveService::Save(const Picture& picture, std::ostream& out)
 	{
 		const Shape& shape = picture.GetShapeAt(i);
 		const Rect bounds = shape.GetBounds();
-		out << shape.GetType() << ' ' << shape.GetColor().ToHexString() << ' ' << bounds.left << ' ' << bounds.top
-			<< ' ' << bounds.width << ' ' << bounds.height << '\n';
+		const ShapeStyle style = shape.GetStyle();
+		out << shape.GetType() << ' ' << style.fillColor.ToHexString() << ' ' << style.strokeColor.ToHexString()
+			<< ' ' << bounds.left << ' ' << bounds.top << ' ' << bounds.width << ' ' << bounds.height << '\n';
 	}
 }
 

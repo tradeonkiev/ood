@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Canvas/SfmlCanvas.h"
+#include "View/ColorDialog.h"
 #include "View/FileDialog.h"
 #include "ViewModel/EditorViewModel.h"
 
@@ -21,6 +22,8 @@ enum class ToolbarButton
 	Ellipse,
 	Triangle,
 	Delete,
+	FillColor,
+	StrokeColor,
 };
 
 class SfmlEditorView
@@ -39,6 +42,8 @@ private:
 	void HandleToolbarButton(ToolbarButton button);
 	void SaveDocument();
 	void OpenDocument();
+	void ChooseFillColor();
+	void ChooseStrokeColor();
 	bool IsButtonEnabled(ToolbarButton button) const;
 	void DrawSelection(const Rect& frame);
 	void DrawToolbar();
@@ -50,11 +55,13 @@ private:
 	SfmlCanvas m_canvas;
 	EditorViewModel& m_viewModel;
 	FileDialog m_fileDialog;
+	ColorDialog m_colorDialog;
 	Point m_lastMousePoint;
 	bool m_mouseCaptured = false;
 
 	std::vector<Rect> m_selectedBounds;
 	bool m_canDelete = false;
+	std::optional<ShapeStyle> m_selectedStyle;
 	std::optional<ShapeType> m_tool;
 	std::string m_title;
 

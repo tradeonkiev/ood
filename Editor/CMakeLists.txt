@@ -38,6 +38,7 @@ add_library(editor_app
         IO/SaveService.cpp
         Model/Commands/AddShape/AddShapeCommand.cpp
         Model/Commands/ChangeBounds/ChangeBoundsCommand.cpp
+        Model/Commands/ChangeStyle/ChangeStyleCommand.cpp
         Model/Commands/DeleteShape/DeleteShapeCommand.cpp
         Model/Commands/Group/GroupCommand.cpp
         Model/Commands/History.cpp
@@ -58,6 +59,7 @@ set_target_properties(editor_app PROPERTIES CXX_EXTENSIONS OFF)
 add_library(editor_sfml
         Canvas/SfmlCanvas.cpp
         View/EditorApp.cpp
+        View/ColorDialog.cpp
         View/FileDialog.cpp
         View/SfmlEditorView.cpp)
 target_link_libraries(editor_sfml PUBLIC editor_app SFML::Graphics comdlg32)
