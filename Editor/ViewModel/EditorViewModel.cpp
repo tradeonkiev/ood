@@ -254,9 +254,10 @@ void EditorViewModel::ClickShape(const Point& point, bool toggleSelection)
 		return;
 	}
 
+	std::vector<std::string> selection = m_state.selection;
 	const std::string id = shape->GetId();
-	auto selection = m_state.selection;
 	const bool isSelected = std::ranges::find(selection, id) != selection.end();
+
 	if (toggleSelection && isSelected)
 	{
 		std::erase(selection, id);
@@ -369,7 +370,10 @@ void EditorViewModel::CommitBoundsChange()
 		}
 	}
 
-	Execute(std::move(group));
+	if (!group->IsEmpty())
+	{
+		Execute(std::move(group));
+	}
 }
 
 void EditorViewModel::Execute(std::unique_ptr<ICommand> command)

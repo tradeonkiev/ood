@@ -18,4 +18,6 @@ void ChangeBoundsCommand::Execute() { m_picture.GetShape(m_id).SetBounds(m_newBo
 
 void ChangeBoundsCommand::Unexecute() { m_picture.GetShape(m_id).SetBounds(m_oldBounds); }
 
+std::string ChangeBoundsCommand::GetName() const { return "Change Bounds"; }
+
 } // namespace editor

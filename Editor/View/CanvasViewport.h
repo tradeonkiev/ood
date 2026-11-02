@@ -17,7 +17,7 @@ public:
 	Point ToPicture(const Point& screen) const;
 	Point ToScreen(const Point& picture) const;
 
-	void ZoomAt(const Point& anchor, double factor);
+	void ZoomAt(const Point& anchorPoint, double zoomScale);
 	void MoveView(double dx, double dy);
 
 private:

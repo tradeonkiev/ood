@@ -16,4 +16,6 @@ void AddShapeCommand::Execute() { m_picture.AddShape(std::move(m_shape)); }
 
 void AddShapeCommand::Unexecute() { m_shape = m_picture.DeleteShape(m_id); }
 
+std::string AddShapeCommand::GetName() const { return "Add Shape"; }
+
 } // namespace editor

@@ -14,6 +14,7 @@ public:
 	ChangeBoundsCommand(Picture& picture, std::string id, Rect oldBounds, Rect newBounds);
 	void Execute() override;
 	void Unexecute() override;
+	std::string GetName() const override;
 
 private:
 	Picture& m_picture;

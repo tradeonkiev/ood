@@ -19,11 +19,11 @@ Point CanvasViewport::ToScreen(const Point& picture) const
 	return { (picture.x - m_offset.x) * m_zoom, (picture.y - m_offset.y) * m_zoom };
 }
 
-void CanvasViewport::ZoomAt(const Point& anchor, double zoomScale)
+void CanvasViewport::ZoomAt(const Point& anchorPoint, double zoomScale)
 {
-	const Point fixed = ToPicture(anchor);
+	const Point fixed = ToPicture(anchorPoint);
 	m_zoom = std::clamp(m_zoom * zoomScale, MinZoom, MaxZoom);
-	m_offset = { fixed.x - anchor.x / m_zoom, fixed.y - anchor.y / m_zoom };
+	m_offset = { fixed.x - anchorPoint.x / m_zoom, fixed.y - anchorPoint.y / m_zoom };
 }
 
 void CanvasViewport::MoveView(double dx, double dy)

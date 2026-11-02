@@ -16,6 +16,7 @@ public:
 	DeleteShapeCommand(Picture& picture, std::string id);
 	void Execute() override;
 	void Unexecute() override;
+	std::string GetName() const override;
 
 private:
 	Picture& m_picture;

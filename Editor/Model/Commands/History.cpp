@@ -1,5 +1,6 @@
 #include "History.h"
 
+#include <iostream>
 #include <utility>
 
 namespace editor
@@ -8,6 +9,7 @@ namespace editor
 void History::Execute(std::unique_ptr<ICommand> command)
 {
 	command->Execute();
+	std::cout << "[Execute] " << command->GetName() << std::endl;
 	m_commands.resize(m_nextIndex);
 	m_commands.push_back(std::move(command));
 	++m_nextIndex;
@@ -23,7 +25,9 @@ void History::Undo()
 	{
 		return;
 	}
+
 	m_commands[m_nextIndex - 1]->Unexecute();
+	std::cout << "[Undo] " << m_commands[m_nextIndex - 1]->GetName() << std::endl;
 	--m_nextIndex;
 }
 
@@ -33,7 +37,9 @@ void History::Redo()
 	{
 		return;
 	}
+
 	m_commands[m_nextIndex]->Execute();
+	std::cout << "[Redo] " << m_commands[m_nextIndex]->GetName() << std::endl;
 	++m_nextIndex;
 }
 

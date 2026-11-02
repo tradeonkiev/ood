@@ -15,6 +15,7 @@ public:
 	AddShapeCommand(Picture& picture, std::unique_ptr<Shape> shape);
 	void Execute() override;
 	void Unexecute() override;
+	std::string GetName() const override;
 
 private:
 	Picture& m_picture;

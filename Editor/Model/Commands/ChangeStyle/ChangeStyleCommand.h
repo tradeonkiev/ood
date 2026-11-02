@@ -14,6 +14,7 @@ public:
 	ChangeStyleCommand(Picture& picture, std::string id, ShapeStyle oldStyle, ShapeStyle newStyle);
 	void Execute() override;
 	void Unexecute() override;
+	std::string GetName() const override;
 
 private:
 	Picture& m_picture;

@@ -25,4 +25,14 @@ void GroupCommand::Unexecute()
 	}
 }
 
+std::string GroupCommand::GetName() const
+{
+	std::string name = "Group [";
+	for (size_t i = 0; i < m_commands.size(); ++i)
+	{
+		name += (i ? ", " : "") + m_commands[i]->GetName();
+	}
+	return name + "]";
+}
+
 } // namespace editor

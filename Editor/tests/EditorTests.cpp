@@ -14,6 +14,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -31,6 +32,7 @@ class MockCommand : public ICommand
 public:
 	MOCK_METHOD(void, Execute, (), (override));
 	MOCK_METHOD(void, Unexecute, (), (override));
+	std::string GetName() const override { return "MockCommand"; }
 };
 
 class MockWindowService : public IWindowService
@@ -210,14 +212,14 @@ TEST_F(CommandUndoTest, UndoAddRemovesShapeAndRedoReturnsIt)
 
 TEST_F(CommandUndoTest, UndoDeleteRestoresShape)
 {
-	picture.AddShape(CreateShape("ellipse", "e", ShapeStyle{ { 10, 20, 30 }, { 40, 50, 60 } }, { 1, 2, 30, 40 }));
+	picture.AddShape(CreateShape("ellipse", "1", ShapeStyle{ { 10, 20, 30 }, { 40, 50, 60 } }, { 1, 2, 30, 40 }));
 
-	history.Execute(std::make_unique<DeleteShapeCommand>(picture, "e"));
+	history.Execute(std::make_unique<DeleteShapeCommand>(picture, "1"));
 	EXPECT_EQ(picture.GetShapeCount(), 0);
 
 	history.Undo();
 	ASSERT_EQ(picture.GetShapeCount(), 1);
-	const Shape& shape = picture.GetShape("e");
+	const Shape& shape = picture.GetShape("1");
 	EXPECT_EQ(shape.GetType(), "ellipse");
 	EXPECT_EQ(shape.GetBounds(), (Rect{ 1, 2, 30, 40 }));
 	EXPECT_EQ(shape.GetStyle(), (ShapeStyle{ { 10, 20, 30 }, { 40, 50, 60 } }));
@@ -227,11 +229,14 @@ TEST_F(CommandUndoTest, UndoDeleteKeepsShapeOrder)
 {
 	AddThree();
 
-	for (const char* id : { "a", "b", "c" })
+	for (const std::string id : { "a", "b", "c" })
 	{
+		auto allIds = std::vector<std::string>{ "a", "b", "c" };
 		history.Execute(std::make_unique<DeleteShapeCommand>(picture, id));
+		std::erase_if(allIds, [id](std::string itemId) { return itemId == id; });
+		EXPECT_EQ(GetIds(picture), allIds);
 		history.Undo();
-		EXPECT_EQ(GetIds(picture), (std::vector<std::string>{ "a", "b", "c" })) << id;
+		EXPECT_EQ(GetIds(picture), (std::vector<std::string>{ "a", "b", "c" }));
 	}
 }
 
@@ -262,9 +267,9 @@ TEST_F(EditorViewModelTest, UndoResizeRestoresBounds)
 TEST(DocumentIOTest, SaveAndLoadKeepTypesBoundsColorsAndOrder)
 {
 	Picture picture;
-	picture.AddShape(CreateShape("rectangle", "r", ShapeStyle{ { 255, 0, 16 }, { 0, 0, 0 } }, { 10, 20, 100, 50 }));
-	picture.AddShape(CreateShape("ellipse", "e", ShapeStyle{ { 0, 128, 0 }, { 255, 255, 255 } }, { 200.5, 200, 80, 40 }));
-	picture.AddShape(CreateShape("triangle", "t", ShapeStyle{ { 1, 2, 3 }, { 4, 5, 6 } }, { 300, 100, 60, 90 }));
+	picture.AddShape(CreateShape("rectangle", "r1", ShapeStyle{ { 255, 0, 16 }, { 0, 0, 0 } }, { 10, 20, 100, 50 }));
+	picture.AddShape(CreateShape("ellipse", "e1", ShapeStyle{ { 0, 128, 0 }, { 255, 255, 255 } }, { 200.5, 200, 80, 40 }));
+	picture.AddShape(CreateShape("triangle", "t1", ShapeStyle{ { 1, 2, 3 }, { 4, 5, 6 } }, { 300, 100, 60, 90 }));
 
 	std::stringstream stream;
 	SaveService::Save(picture, stream);
@@ -321,3 +326,5 @@ TEST(CanvasViewportTest, MoveViewIsMeasuredInScreenPixels)
 	EXPECT_EQ(viewport.GetOffset(), (Point{ 20, -10 }));
 	EXPECT_EQ(viewport.ToScreen({ 20, -10 }), (Point{ 0, 0 }));
 }
+
+// TEST()

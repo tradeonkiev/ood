@@ -15,6 +15,7 @@ public:
 	bool IsEmpty() const;
 	void Execute() override;
 	void Unexecute() override;
+	std::string GetName() const override;
 
 private:
 	std::vector<std::unique_ptr<ICommand>> m_commands;
