@@ -22,6 +22,8 @@ void Picture::AddShape(std::unique_ptr<Shape> shape, int index)
 
 	m_shapeConnections[id] = shape->SubscribeToChanged([this](const Shape& changed) { m_shapeChangedSignal(changed); });
 	m_shapes.insert(m_shapes.begin() + index, std::move(shape));
+
+	m_shapeAddedSignal(*m_shapes[index]);
 }
 
 std::unique_ptr<Shape> Picture::DeleteShape(const std::string& id)
@@ -33,6 +35,25 @@ std::unique_ptr<Shape> Picture::DeleteShape(const std::string& id)
 
 	m_shapeRemovedSignal(*shape);
 	return shape;
+}
+
+void Picture::MoveShape(const std::string& id, int newIndex)
+{
+	if (newIndex < 0 || newIndex >= GetShapeCount())
+	{
+		throw std::out_of_range("Shape index is out of range");
+	}
+	const int index = GetShapeIndex(id);
+	if (index == newIndex)
+	{
+		return;
+	}
+
+	auto shape = std::move(m_shapes[index]);
+	m_shapes.erase(m_shapes.begin() + index);
+	m_shapes.insert(m_shapes.begin() + newIndex, std::move(shape));
+
+	m_shapeMovedSignal(*m_shapes[newIndex]);
 }
 
 Shape& Picture::GetShape(const std::string& id) { return *m_shapes[GetShapeIndex(id)]; }
@@ -55,11 +76,13 @@ int Picture::GetShapeIndex(const std::string& id) const
 
 int Picture::GetShapeCount() const { return static_cast<int>(m_shapes.size()); }
 
-const Shape* Picture::FindShapeAtPoint(const Point& point) const
+bool Picture::HasShape(const std::string& id) const { return m_shapeConnections.contains(id); }
+
+const Shape* Picture::FindShapeAtPoint(const Point& point, double time) const
 {
-	for (auto it = m_shapes.rbegin(); it != m_shapes.rend(); ++it)
+	for (auto it = m_shapes.rbegin(); it != m_shapes.rend(); it++)
 	{
-		if ((*it)->ContainsPoint(point))
+		if ((*it)->GetLifetime().Contains(time) && (*it)->ContainsPoint(point))
 		{
 			return it->get();
 		}
@@ -67,13 +90,9 @@ const Shape* Picture::FindShapeAtPoint(const Point& point) const
 	return nullptr;
 }
 
-void Picture::Draw(ICanvas& canvas) const
+boost::signals2::connection Picture::SubscribeToShapeAdded(const ShapeSignal::slot_type& handler)
 {
-	canvas.Clear();
-	for (const auto& shape : m_shapes)
-	{
-		shape->Draw(canvas);
-	}
+	return m_shapeAddedSignal.connect(handler);
 }
 
 boost::signals2::connection Picture::SubscribeToShapeRemoved(const ShapeSignal::slot_type& handler)
@@ -84,6 +103,11 @@ boost::signals2::connection Picture::SubscribeToShapeRemoved(const ShapeSignal::
 boost::signals2::connection Picture::SubscribeToShapeChanged(const ShapeSignal::slot_type& handler)
 {
 	return m_shapeChangedSignal.connect(handler);
+}
+
+boost::signals2::connection Picture::SubscribeToShapeMoved(const ShapeSignal::slot_type& handler)
+{
+	return m_shapeMovedSignal.connect(handler);
 }
 
 } // namespace editor

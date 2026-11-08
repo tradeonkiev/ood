@@ -19,28 +19,30 @@ bool History::CanUndo() const { return m_nextIndex > 0; }
 
 bool History::CanRedo() const { return m_nextIndex < m_commands.size(); }
 
-void History::Undo()
+const ICommand* History::Undo()
 {
 	if (!CanUndo())
 	{
-		return;
+		return nullptr;
 	}
 
 	m_commands[m_nextIndex - 1]->Unexecute();
 	std::cout << "[Undo] " << m_commands[m_nextIndex - 1]->GetName() << std::endl;
 	--m_nextIndex;
+	return m_commands[m_nextIndex].get();
 }
 
-void History::Redo()
+const ICommand* History::Redo()
 {
 	if (!CanRedo())
 	{
-		return;
+		return nullptr;
 	}
 
 	m_commands[m_nextIndex]->Execute();
 	std::cout << "[Redo] " << m_commands[m_nextIndex]->GetName() << std::endl;
 	++m_nextIndex;
+	return m_commands[m_nextIndex - 1].get();
 }
 
 } // namespace editor

@@ -1,5 +1,6 @@
 #include "GroupCommand.h"
 
+#include <algorithm>
 #include <utility>
 
 namespace editor
@@ -33,6 +34,22 @@ std::string GroupCommand::GetName() const
 		name += (i ? ", " : "") + m_commands[i]->GetName();
 	}
 	return name + "]";
+}
+
+std::vector<std::string> GroupCommand::GetShapeIds() const
+{
+	std::vector<std::string> ids;
+	for (const auto& command : m_commands)
+	{
+		for (auto& id : command->GetShapeIds())
+		{
+			if (std::ranges::find(ids, id) == ids.end())
+			{
+				ids.push_back(std::move(id));
+			}
+		}
+	}
+	return ids;
 }
 
 } // namespace editor

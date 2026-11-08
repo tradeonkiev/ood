@@ -38,10 +38,12 @@ add_library(editor_app
         IO/SaveService.cpp
         Model/Commands/AddShape/AddShapeCommand.cpp
         Model/Commands/ChangeBounds/ChangeBoundsCommand.cpp
+        Model/Commands/ChangeLifetime/ChangeLifetimeCommand.cpp
         Model/Commands/ChangeStyle/ChangeStyleCommand.cpp
         Model/Commands/DeleteShape/DeleteShapeCommand.cpp
         Model/Commands/Group/GroupCommand.cpp
         Model/Commands/History.cpp
+        Model/Commands/MoveShape/MoveShapeCommand.cpp
         Model/Document.cpp
         Model/Picture.cpp
         Model/ShapeFactory.cpp
@@ -62,7 +64,8 @@ add_library(editor_sfml
         View/EditorApp.cpp
         View/ColorDialog.cpp
         View/FileDialog.cpp
-        View/SfmlEditorView.cpp)
+        View/SfmlEditorView.cpp
+        View/TimelineView.cpp)
 target_link_libraries(editor_sfml PUBLIC editor_app SFML::Graphics comdlg32)
 
 

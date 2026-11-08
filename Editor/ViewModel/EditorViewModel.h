@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Canvas/ICanvas.h"
+#include "Constants/EditorConstants.h"
 #include "Model/Document.h"
 #include "ViewModel/IWindowService.h"
 #include "ViewModel/SelectionFrame.h"
@@ -29,6 +31,13 @@ enum class Mode
 	Move,
 	Resize,
 	Create,
+	ResizeLifetime,
+};
+
+enum class LifetimeEdge
+{
+	Start,
+	End,
 };
 
 struct EditorState
@@ -38,9 +47,16 @@ struct EditorState
 	Mode mode = Mode::None;
 	Point dragStart;
 	std::map<std::string, Rect> boundsBeforeDrag;
+	std::map<std::string, Rect> previewBounds;
 	Corner resizeCorner = Corner::BottomRight;
 	Point grabbedCorner;
 	std::string createdId;
+	Rect createdBounds;
+	std::string lifetimeId;
+	LifetimeEdge lifetimeEdge = LifetimeEdge::End;
+	LifeStyle previewLifetime;
+	double currentTime = 0;
+	ShapeStyle newShapeStyle{ DefaultFillColor, DefaultStrokeColor };
 };
 
 class EditorViewModel
@@ -51,11 +67,16 @@ public:
 	EditorViewModel(std::shared_ptr<Document> document, IWindowService& windows);
 
 	const Picture& GetPicture() const;
+	void DrawPicture(ICanvas& canvas) const;
+	Rect GetShapeBounds(const std::string& id) const;
+	LifeStyle GetShapeLifetime(const std::string& id) const;
 	std::vector<Rect> GetSelectedBounds() const;
 	bool CanDelete() const;
-	std::optional<ShapeStyle> GetSelectedStyle() const;
+	bool IsSelected(const std::string& id) const;
+	ShapeStyle GetCurrentStyle() const;
 	std::optional<ShapeType> GetTool() const;
 	std::string GetTitle() const;
+	double GetCurrentTime() const;
 
 	boost::signals2::connection SubscribeToChanged(const Signal::slot_type& handler);
 
@@ -66,6 +87,12 @@ public:
 	void Cancel();
 
 	void SelectTool(ShapeType tool);
+	void SelectShape(const std::string& id, bool toggleSelection);
+	void MoveSelectedLayers(int delta);
+	void SetCurrentTime(double time);
+	void BeginLifetimeResize(const std::string& id, LifetimeEdge edge);
+	void ResizeLifetime(double time);
+	void EndLifetimeResize();
 	void DeleteSelected();
 	void SetFillColor(Color color);
 	void SetStrokeColor(Color color);
@@ -92,8 +119,10 @@ private:
 	void FinishDrag();
 	void SaveBoundsBeforeDrag();
 	void CommitBoundsChange();
+	void ForgetShape(const std::string& id);
 
 	void Execute(std::unique_ptr<ICommand> command);
+	void SelectAffectedShapes(const ICommand* command);
 	void SetSelection(std::vector<std::string> ids);
 	void SetTool(std::optional<ShapeType> tool);
 
@@ -110,8 +139,10 @@ private:
 	double m_canvasHeight = 0;
 
 	Signal m_changedSignal;
+	boost::signals2::scoped_connection m_shapeAddedConnection;
 	boost::signals2::scoped_connection m_shapeRemovedConnection;
 	boost::signals2::scoped_connection m_shapeChangedConnection;
+	boost::signals2::scoped_connection m_shapeMovedConnection;
 };
 
 } // namespace editor

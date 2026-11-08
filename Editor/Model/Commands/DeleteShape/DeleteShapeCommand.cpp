@@ -20,4 +20,7 @@ void DeleteShapeCommand::Execute()
 void DeleteShapeCommand::Unexecute() { m_picture.AddShape(std::move(m_shape), m_index); }
 
 std::string DeleteShapeCommand::GetName() const { return "Delete Shape"; }
+
+std::vector<std::string> DeleteShapeCommand::GetShapeIds() const { return { m_id }; }
+
 } // namespace editor

@@ -4,6 +4,7 @@
 #include "View/CanvasViewport.h"
 #include "View/ColorDialog.h"
 #include "View/FileDialog.h"
+#include "View/TimelineView.h"
 #include "ViewModel/EditorViewModel.h"
 
 #include <SFML/Graphics/RenderWindow.hpp>
@@ -39,6 +40,7 @@ private:
 	void UpdateTitle();
 	void HandleEvent(const sf::Event& event);
 	void HandleKey(const sf::Event::KeyPressed& key);
+	void HandleLayerKey(const sf::Event::KeyPressed& key);
 	void Zoom(double factor);
 	void MoveView(double dx, double dy);
 	void OnViewportChanged();
@@ -61,12 +63,14 @@ private:
 	EditorViewModel& m_viewModel;
 	FileDialog m_fileDialog;
 	ColorDialog m_colorDialog;
+	TimelineView m_timeline;
 	Point m_lastMousePoint;
 	bool m_mouseCaptured = false;
+	bool m_timelineCaptured = false;
 
 	std::vector<Rect> m_selectedBounds;
 	bool m_canDelete = false;
-	std::optional<ShapeStyle> m_selectedStyle;
+	ShapeStyle m_style;
 	std::optional<ShapeType> m_tool;
 	std::string m_title;
 

@@ -45,8 +45,23 @@ std::unique_ptr<Shape> LoadService::ParseLine(const std::string& line, const std
 	Rect bounds;
 	if (!(iss >> type >> fillColor >> strokeColor >> bounds.left >> bounds.top >> bounds.width >> bounds.height))
 	{
-		throw std::runtime_error("неверный формат, ожидается: тип #заливка #обводка left top width height");
+		throw std::runtime_error("неверный формат, ожидается: тип #заливка #обводка left top width height [start end]");
 	}
+
+	LifeStyle lifetime;
+	if (iss >> lifetime.start)
+	{
+		if (!(iss >> lifetime.end))
+		{
+			throw std::runtime_error("после начала времени жизни ожидается его конец");
+		}
+		if (lifetime.start < 0 || lifetime.end > MaxTime
+			|| lifetime.end - lifetime.start < MinDuration)
+		{
+			throw std::runtime_error("неверное время жизни фигуры");
+		}
+	}
+	iss.clear();
 
 	std::string extra;
 	if (iss >> extra)
@@ -58,7 +73,7 @@ std::unique_ptr<Shape> LoadService::ParseLine(const std::string& line, const std
 		throw std::runtime_error("ширина и высота должны быть больше нуля");
 	}
 
-	return CreateShape(type, id, { ParseColor(fillColor), ParseColor(strokeColor) }, bounds);
+	return CreateShape(type, id, { ParseColor(fillColor), ParseColor(strokeColor) }, bounds, lifetime);
 }
 
 Color LoadService::ParseColor(const std::string& text)

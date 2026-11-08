@@ -1,5 +1,8 @@
 #include "SfmlCanvas.h"
 
+#include "Constants/ViewColors.h"
+#include "Constants/ViewConstants.h"
+
 #include <SFML/Graphics/ConvexShape.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 
@@ -8,8 +11,6 @@
 
 namespace editor
 {
-
-constexpr float StrokeThickness = 2;
 
 SfmlCanvas::SfmlCanvas(sf::RenderTarget& target, sf::Vector2f origin, const CanvasViewport& viewport)
 	: m_target(target)
@@ -26,13 +27,13 @@ void SfmlCanvas::SetSheetSize(double width, double height)
 
 void SfmlCanvas::Clear()
 {
-	m_target.clear(sf::Color(200, 200, 200));
+	m_target.clear(CanvasBackgroundColor);
 
 	const float zoom = static_cast<float>(m_viewport.GetZoom());
 	sf::RectangleShape sheet(
 		{ static_cast<float>(m_sheetWidth) * zoom, static_cast<float>(m_sheetHeight) * zoom });
 	sheet.setPosition(ToWindow({ 0, 0 }));
-	sheet.setFillColor(sf::Color::White);
+	sheet.setFillColor(SheetColor);
 	m_target.draw(sheet);
 }
 
@@ -63,11 +64,10 @@ void SfmlCanvas::DrawPolygon(const std::vector<Point>& vertices)
 
 void SfmlCanvas::DrawEllipse(Point center, double radiusX, double radiusY)
 {
-	constexpr int PointCount = 64;
-	sf::ConvexShape ellipse(PointCount);
-	for (int i = 0; i < PointCount; i++)
+	sf::ConvexShape ellipse(EllipsePointCount);
+	for (int i = 0; i < EllipsePointCount; i++)
 	{
-		const double angle = 2 * std::numbers::pi * i / PointCount;
+		const double angle = 2 * std::numbers::pi * i / EllipsePointCount;
 		ellipse.setPoint(i, ToWindow({ center.x + radiusX * std::cos(angle), center.y + radiusY * std::sin(angle) }));
 	}
 	DrawFilled(ellipse);
@@ -83,7 +83,7 @@ void SfmlCanvas::DrawFilled(sf::Shape& shape)
 {
 	shape.setFillColor(m_fillColor);
 	shape.setOutlineColor(m_strokeColor);
-	shape.setOutlineThickness(-StrokeThickness * static_cast<float>(m_viewport.GetZoom()));
+	shape.setOutlineThickness(-ShapeStrokeThickness * static_cast<float>(m_viewport.GetZoom()));
 	m_target.draw(shape);
 }
 

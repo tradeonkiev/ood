@@ -16,6 +16,7 @@ public:
 	void Execute() override;
 	void Unexecute() override;
 	std::string GetName() const override;
+	std::vector<std::string> GetShapeIds() const override;
 
 private:
 	std::vector<std::unique_ptr<ICommand>> m_commands;

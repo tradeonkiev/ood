@@ -9,21 +9,29 @@
 namespace editor
 {
 
-std::unique_ptr<Shape> CreateShape(const std::string& type, const std::string& id, const ShapeStyle& style, const Rect& bounds)
+std::unique_ptr<Shape> CreateShape(const std::string& type, const std::string& id, const ShapeStyle& style, const Rect& bounds,
+	const LifeStyle& lifetime)
 {
+	std::unique_ptr<Shape> shape;
 	if (type == "rectangle")
 	{
-		return std::make_unique<RectangleShape>(id, style, bounds);
+		shape = std::make_unique<RectangleShape>(id, style, bounds);
 	}
-	if (type == "ellipse")
+	else if (type == "ellipse")
 	{
-		return std::make_unique<EllipseShape>(id, style, bounds);
+		shape = std::make_unique<EllipseShape>(id, style, bounds);
 	}
-	if (type == "triangle")
+	else if (type == "triangle")
 	{
-		return std::make_unique<TriangleShape>(id, style, bounds);
+		shape = std::make_unique<TriangleShape>(id, style, bounds);
 	}
-	throw std::invalid_argument("неподдерживаемый тип фигуры \"" + type + "\"");
+	else
+	{
+		throw std::invalid_argument("неподдерживаемый тип фигуры \"" + type + "\"");
+	}
+
+	shape->SetLifetime(lifetime);
+	return shape;
 }
 
 } // namespace editor

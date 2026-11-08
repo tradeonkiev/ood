@@ -4,6 +4,7 @@
 #include "Model/Commands/DeleteShape/DeleteShapeCommand.h"
 #include "Model/Commands/History.h"
 #include "Model/Commands/ICommand.h"
+#include "Model/Commands/MoveShape/MoveShapeCommand.h"
 #include "Model/Document.h"
 #include "Model/Picture.h"
 #include "Model/ShapeFactory.h"
@@ -101,6 +102,13 @@ protected:
 	}
 
 	Rect GetBounds() const { return document->GetPicture().GetShapeAt(0).GetBounds(); }
+
+	void AddShape(ShapeType type, Point from)
+	{
+		viewModel.SelectTool(type);
+		viewModel.MouseDown(from, false);
+		viewModel.MouseUp({ from.x + 50, from.y + 50 });
+	}
 
 	StrictMock<MockWindowService> windows;
 	std::shared_ptr<Document> document = std::make_shared<Document>();
@@ -240,6 +248,171 @@ TEST_F(CommandUndoTest, UndoDeleteKeepsShapeOrder)
 	}
 }
 
+TEST_F(CommandUndoTest, MoveShapeChangesOrderAndUndoRestoresIt)
+{
+	AddThree();
+
+	history.Execute(std::make_unique<MoveShapeCommand>(picture, "a", 2));
+	EXPECT_EQ(GetIds(picture), (std::vector<std::string>{ "b", "c", "a" }));
+
+	history.Undo();
+	EXPECT_EQ(GetIds(picture), (std::vector<std::string>{ "a", "b", "c" }));
+
+	history.Redo();
+	EXPECT_EQ(GetIds(picture), (std::vector<std::string>{ "b", "c", "a" }));
+}
+
+TEST_F(CommandUndoTest, HitTestUsesNewOrder)
+{
+	AddThree();
+	EXPECT_EQ(picture.FindShapeAtPoint({ 5, 5 }, 0)->GetId(), "c");
+
+	picture.MoveShape("a", 2);
+	EXPECT_EQ(picture.FindShapeAtPoint({ 5, 5 }, 0)->GetId(), "a");
+}
+
+TEST_F(EditorViewModelTest, PictureChangesNotifyViewModelSubscribers)
+{
+	int notifications = 0;
+	const boost::signals2::scoped_connection connection
+		= viewModel.SubscribeToChanged([&notifications] { notifications++; });
+
+	document->GetPicture().AddShape(CreateShape("ellipse", "x", ShapeStyle{}, { 0, 0, 10, 10 }));
+	EXPECT_EQ(notifications, 1);
+
+	document->GetPicture().MoveShape("x", 0);
+	EXPECT_EQ(notifications, 2);
+
+	document->GetPicture().DeleteShape("x");
+	EXPECT_EQ(notifications, 3);
+}
+
+TEST_F(EditorViewModelTest, SelectShapeFromListSelectsItOnCanvas)
+{
+	const std::string id = document->GetPicture().GetShapeAt(0).GetId();
+	viewModel.SelectShape(id, false);
+	EXPECT_TRUE(viewModel.IsSelected(id));
+	EXPECT_EQ(viewModel.GetSelectedBounds(), (std::vector<Rect>{ GetBounds() }));
+
+	viewModel.SelectShape(id, true);
+	EXPECT_FALSE(viewModel.IsSelected(id));
+	EXPECT_TRUE(viewModel.GetSelectedBounds().empty());
+}
+
+TEST_F(EditorViewModelTest, MoveSelectedLayersIsUndoable)
+{
+	AddShape(ShapeType::Ellipse, { 300, 300 });
+	AddShape(ShapeType::Triangle, { 500, 300 });
+	const auto before = GetIds(document->GetPicture());
+
+	viewModel.SelectShape(before[0], false);
+	viewModel.SelectShape(before[1], true);
+	viewModel.MoveSelectedLayers(1);
+	EXPECT_EQ(GetIds(document->GetPicture()), (std::vector<std::string>{ before[2], before[0], before[1] }));
+
+	viewModel.MoveSelectedLayers(1);
+	EXPECT_EQ(GetIds(document->GetPicture()), (std::vector<std::string>{ before[2], before[0], before[1] }));
+
+	viewModel.MoveSelectedLayers(-1);
+	EXPECT_EQ(GetIds(document->GetPicture()), before);
+
+	viewModel.Undo();
+	EXPECT_EQ(GetIds(document->GetPicture()), (std::vector<std::string>{ before[2], before[0], before[1] }));
+	EXPECT_TRUE(viewModel.IsSelected(before[0]));
+	EXPECT_TRUE(viewModel.IsSelected(before[1]));
+}
+
+TEST_F(EditorViewModelTest, UndoSelectsAffectedShapes)
+{
+	const std::string first = document->GetPicture().GetShapeAt(0).GetId();
+	AddShape(ShapeType::Ellipse, { 300, 300 });
+	viewModel.SelectShape(first, false);
+	viewModel.SetFillColor({ 1, 2, 3 });
+	viewModel.SelectShape(document->GetPicture().GetShapeAt(1).GetId(), false);
+
+	viewModel.Undo();
+	EXPECT_TRUE(viewModel.IsSelected(first));
+	EXPECT_EQ(viewModel.GetSelectedBounds().size(), 1u);
+}
+
+TEST_F(EditorViewModelTest, CurrentTimeIsNotInHistory)
+{
+	viewModel.Undo();
+	ASSERT_FALSE(document->GetHistory().CanUndo());
+
+	viewModel.SetCurrentTime(4.5);
+	EXPECT_DOUBLE_EQ(viewModel.GetCurrentTime(), 4.5);
+	EXPECT_FALSE(document->GetHistory().CanUndo());
+}
+
+TEST_F(EditorViewModelTest, LifetimeChangeIsUndoableAndHidesShape)
+{
+	const std::string id = document->GetPicture().GetShapeAt(0).GetId();
+	viewModel.BeginLifetimeResize(id, LifetimeEdge::Start);
+	viewModel.ResizeLifetime(3);
+	viewModel.EndLifetimeResize();
+	EXPECT_EQ(document->GetPicture().GetShape(id).GetLifetime(), (LifeStyle{ 3, MaxTime }));
+
+	viewModel.SetCurrentTime(1);
+	viewModel.MouseDown({ 150, 120 }, false);
+	viewModel.MouseUp({ 150, 120 });
+	EXPECT_FALSE(viewModel.IsSelected(id));
+
+	viewModel.Undo();
+	EXPECT_EQ(document->GetPicture().GetShape(id).GetLifetime(), LifeStyle{});
+}
+
+TEST_F(EditorViewModelTest, ResizeLifetimeByEdgeIsPreviewedThenUndoable)
+{
+	const std::string id = document->GetPicture().GetShapeAt(0).GetId();
+	viewModel.BeginLifetimeResize(id, LifetimeEdge::End);
+	viewModel.ResizeLifetime(4);
+	EXPECT_EQ(viewModel.GetShapeLifetime(id), (LifeStyle{ 0, 4 }));
+	EXPECT_EQ(document->GetPicture().GetShape(id).GetLifetime(), LifeStyle{});
+
+	viewModel.EndLifetimeResize();
+	EXPECT_EQ(document->GetPicture().GetShape(id).GetLifetime(), (LifeStyle{ 0, 4 }));
+
+	viewModel.Undo();
+	EXPECT_EQ(document->GetPicture().GetShape(id).GetLifetime(), LifeStyle{});
+}
+
+TEST_F(EditorViewModelTest, WindowsOfOneDocumentHaveOwnSelectionTimeAndPreview)
+{
+	EditorViewModel other{ document, windows };
+	other.SetCanvasSize(800, 600);
+	const std::string id = document->GetPicture().GetShapeAt(0).GetId();
+	other.SelectShape(id, false);
+	other.SetCurrentTime(2);
+
+	viewModel.MouseDown({ 150, 120 }, false);
+	viewModel.MouseMove({ 250, 220 });
+	EXPECT_EQ(GetBounds(), (Rect{ 100, 100, 100, 50 }));
+	EXPECT_EQ(other.GetSelectedBounds(), (std::vector<Rect>{ { 100, 100, 100, 50 } }));
+	EXPECT_DOUBLE_EQ(viewModel.GetCurrentTime(), 0);
+
+	viewModel.MouseUp({ 250, 220 });
+	EXPECT_EQ(other.GetSelectedBounds(), (std::vector<Rect>{ { 200, 200, 100, 50 } }));
+
+	viewModel.DeleteSelected();
+	EXPECT_FALSE(other.IsSelected(id));
+	EXPECT_TRUE(other.GetSelectedBounds().empty());
+
+	other.Undo();
+	EXPECT_TRUE(other.IsSelected(id));
+	EXPECT_FALSE(viewModel.IsSelected(id));
+}
+
+TEST_F(EditorViewModelTest, NewShapeGetsLastChosenColor)
+{
+	viewModel.SelectShape(document->GetPicture().GetShapeAt(0).GetId(), false);
+	viewModel.SetFillColor({ 10, 20, 30 });
+	viewModel.SetStrokeColor({ 40, 50, 60 });
+
+	AddShape(ShapeType::Ellipse, { 300, 300 });
+	EXPECT_EQ(document->GetPicture().GetShapeAt(1).GetStyle(), (ShapeStyle{ { 10, 20, 30 }, { 40, 50, 60 } }));
+}
+
 TEST_F(EditorViewModelTest, UndoMoveRestoresPosition)
 {
 	Drag({ 150, 120 }, { 250, 220 });
@@ -269,7 +442,7 @@ TEST(DocumentIOTest, SaveAndLoadKeepTypesBoundsColorsAndOrder)
 	Picture picture;
 	picture.AddShape(CreateShape("rectangle", "r1", ShapeStyle{ { 255, 0, 16 }, { 0, 0, 0 } }, { 10, 20, 100, 50 }));
 	picture.AddShape(CreateShape("ellipse", "e1", ShapeStyle{ { 0, 128, 0 }, { 255, 255, 255 } }, { 200.5, 200, 80, 40 }));
-	picture.AddShape(CreateShape("triangle", "t1", ShapeStyle{ { 1, 2, 3 }, { 4, 5, 6 } }, { 300, 100, 60, 90 }));
+	picture.AddShape(CreateShape("triangle", "t1", ShapeStyle{ { 1, 2, 3 }, { 4, 5, 6 } }, { 300, 100, 60, 90 }, { 1.5, 7 }));
 
 	std::stringstream stream;
 	SaveService::Save(picture, stream);
@@ -281,6 +454,7 @@ TEST(DocumentIOTest, SaveAndLoadKeepTypesBoundsColorsAndOrder)
 		EXPECT_EQ(loaded[i]->GetType(), picture.GetShapeAt(i).GetType());
 		EXPECT_EQ(loaded[i]->GetBounds(), picture.GetShapeAt(i).GetBounds());
 		EXPECT_EQ(loaded[i]->GetStyle(), picture.GetShapeAt(i).GetStyle());
+		EXPECT_EQ(loaded[i]->GetLifetime(), picture.GetShapeAt(i).GetLifetime());
 	}
 }
 
@@ -310,10 +484,10 @@ TEST(CanvasViewportTest, ZoomIsClamped)
 	CanvasViewport viewport;
 
 	viewport.ZoomAt({ 0, 0 }, 1000);
-	EXPECT_DOUBLE_EQ(viewport.GetZoom(), CanvasViewport::MaxZoom);
+	EXPECT_DOUBLE_EQ(viewport.GetZoom(), MaxZoom);
 
 	viewport.ZoomAt({ 0, 0 }, 0.00001);
-	EXPECT_DOUBLE_EQ(viewport.GetZoom(), CanvasViewport::MinZoom);
+	EXPECT_DOUBLE_EQ(viewport.GetZoom(), MinZoom);
 }
 
 TEST(CanvasViewportTest, MoveViewIsMeasuredInScreenPixels)

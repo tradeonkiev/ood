@@ -15,8 +15,8 @@ public:
 	void Execute(std::unique_ptr<ICommand> command);
 	bool CanUndo() const;
 	bool CanRedo() const;
-	void Undo();
-	void Redo();
+	const ICommand* Undo();
+	const ICommand* Redo();
 
 private:
 	std::vector<std::unique_ptr<ICommand>> m_commands;

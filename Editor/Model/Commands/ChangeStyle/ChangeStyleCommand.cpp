@@ -18,4 +18,7 @@ void ChangeStyleCommand::Execute() { m_picture.GetShape(m_id).SetStyle(m_newStyl
 void ChangeStyleCommand::Unexecute() { m_picture.GetShape(m_id).SetStyle(m_oldStyle); }
 
 std::string ChangeStyleCommand::GetName() const { return "Change Style"; }
+
+std::vector<std::string> ChangeStyleCommand::GetShapeIds() const { return { m_id }; }
+
 } // namespace editor

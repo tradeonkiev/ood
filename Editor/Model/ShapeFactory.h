@@ -8,6 +8,7 @@
 namespace editor
 {
 
-std::unique_ptr<Shape> CreateShape(const std::string& type, const std::string& id, const ShapeStyle& style, const Rect& bounds);
+std::unique_ptr<Shape> CreateShape(const std::string& type, const std::string& id, const ShapeStyle& style, const Rect& bounds,
+	const LifeStyle& lifetime = {});
 
 } // namespace editor

@@ -1,5 +1,7 @@
 #include "EditorApp.h"
 
+#include "Constants/ViewConstants.h"
+
 #include <SFML/System/Sleep.hpp>
 
 #include <utility>
@@ -8,11 +10,11 @@ namespace editor
 {
 
 EditorApp::EditorWindow::EditorWindow(std::shared_ptr<Document> document, IWindowService& windows)
-	: window(sf::VideoMode({ 1280, 800 }), "editor")
+	: window(sf::VideoMode({ WindowWidth, WindowHeight }), WindowTitle)
 	, viewModel(std::move(document), windows)
 	, view(window, viewModel)
 {
-	window.setFramerateLimit(60);
+	window.setFramerateLimit(FrameRateLimit);
 }
 
 void EditorApp::OpenWindow(std::shared_ptr<Document> document)

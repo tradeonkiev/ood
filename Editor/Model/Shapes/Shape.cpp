@@ -30,6 +30,14 @@ void Shape::SetBounds(const Rect& bounds)
 	m_changedSignal(*this);
 }
 
+LifeStyle Shape::GetLifetime() const { return m_lifetime; }
+
+void Shape::SetLifetime(const LifeStyle& lifetime)
+{
+	m_lifetime = lifetime;
+	m_changedSignal(*this);
+}
+
 void Shape::Draw(ICanvas& canvas) const
 {
 	canvas.SetFillColor(m_style.fillColor);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Constants/EditorConstants.h"
 #include "Geometry/Geometry.h"
 
 namespace editor
@@ -8,9 +9,6 @@ namespace editor
 class CanvasViewport
 {
 public:
-	static constexpr double MinZoom = 0.1;
-	static constexpr double MaxZoom = 10;
-
 	double GetZoom() const;
 	Point GetOffset() const;
 

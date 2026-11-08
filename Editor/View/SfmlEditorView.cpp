@@ -1,5 +1,7 @@
 #include "SfmlEditorView.h"
 
+#include "Constants/ViewColors.h"
+#include "Constants/ViewConstants.h"
 #include "ViewModel/SelectionFrame.h"
 
 #include <SFML/Graphics/CircleShape.hpp>
@@ -17,21 +19,13 @@
 namespace editor
 {
 
-float ToolbarHeight = 48;
-float ButtonSize = 40;
-float ButtonSpacing = 8;
-double ZoomStep = 1.1;
-double MoveViewStep = 20;
-double SheetWidth = 1280;
-double SheetHeight = 752;
-
 std::array<ToolbarButton, 6> ToolbarButtons{ ToolbarButton::Rectangle, ToolbarButton::Ellipse,
 	ToolbarButton::Triangle, ToolbarButton::Delete, ToolbarButton::FillColor, ToolbarButton::StrokeColor };
 
 sf::Vector2f GetButtonPosition(int index)
 {
-	return { ButtonSpacing + static_cast<float>(index) * (ButtonSize + ButtonSpacing),
-		(ToolbarHeight - ButtonSize) / 2 };
+	return { toolbar::ButtonSpacing + static_cast<float>(index) * (toolbar::ButtonSize + toolbar::ButtonSpacing),
+		(toolbar::Height - toolbar::ButtonSize) / 2 };
 }
 
 sf::RectangleShape MakeOutlinedRect(sf::Vector2f position, sf::Vector2f size, sf::Color outline, sf::Color fill)
@@ -47,10 +41,9 @@ sf::RectangleShape MakeOutlinedRect(sf::Vector2f position, sf::Vector2f size, sf
 void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f buttonPosition, bool enabled,
 	const std::optional<ShapeStyle>& style)
 {
-	float Padding = 10;
-	const sf::Vector2f topLeft = buttonPosition + sf::Vector2f(Padding, Padding);
-	const float size = ButtonSize - 2 * Padding;
-	const sf::Color iconColor = enabled ? sf::Color(40, 40, 40) : sf::Color(180, 180, 180);
+	const sf::Vector2f topLeft = buttonPosition + sf::Vector2f(toolbar::IconPadding, toolbar::IconPadding);
+	const float size = toolbar::ButtonSize - 2 * toolbar::IconPadding;
+	const sf::Color iconColor = enabled ? toolbar::IconColor : toolbar::IconDisabledColor;
 
 	switch (button)
 	{
@@ -91,7 +84,7 @@ void DrawButtonIcon(sf::RenderTarget& target, ToolbarButton button, sf::Vector2f
 		break;
 	}
 	case ToolbarButton::FillColor: {
-		const sf::Color fill = style ? ToSfmlColor(style->fillColor) : sf::Color(230, 230, 230);
+		const sf::Color fill = style ? ToSfmlColor(style->fillColor) : toolbar::EmptyFillColor;
 		target.draw(MakeOutlinedRect(topLeft, { size, size }, iconColor, fill));
 		break;
 	}
@@ -125,10 +118,11 @@ std::optional<ShapeType> GetShapeType(ToolbarButton button)
 
 SfmlEditorView::SfmlEditorView(sf::RenderWindow& window, EditorViewModel& viewModel)
 	: m_window(window)
-	, m_canvas(window, { 0, ToolbarHeight }, m_viewport)
+	, m_canvas(window, { 0, toolbar::Height }, m_viewport)
 	, m_viewModel(viewModel)
 	, m_fileDialog(window.getNativeHandle())
 	, m_colorDialog(window.getNativeHandle())
+	, m_timeline(window, viewModel)
 {
 	m_viewModelConnection = m_viewModel.SubscribeToChanged([this] { Update(); });
 	Update();
@@ -140,7 +134,7 @@ void SfmlEditorView::Update()
 {
 	m_selectedBounds = m_viewModel.GetSelectedBounds();
 	m_canDelete = m_viewModel.CanDelete();
-	m_selectedStyle = m_viewModel.GetSelectedStyle();
+	m_style = m_viewModel.GetCurrentStyle();
 	m_tool = m_viewModel.GetTool();
 }
 
@@ -160,11 +154,12 @@ void SfmlEditorView::Render()
 	}
 
 	UpdateTitle();
-	m_viewModel.GetPicture().Draw(m_canvas);
+	m_viewModel.DrawPicture(m_canvas);
 	for (const auto& frame : m_selectedBounds)
 	{
 		DrawSelection(frame);
 	}
+	m_timeline.Draw();
 	DrawToolbar();
 	m_window.display();
 }
@@ -196,7 +191,7 @@ void SfmlEditorView::HandleEvent(const sf::Event& event)
 		{
 			return;
 		}
-		if (pressed->position.y < ToolbarHeight)
+		if (pressed->position.y < toolbar::Height)
 		{
 			if (const auto button = FindToolbarButton(pressed->position); button && IsButtonEnabled(*button))
 			{
@@ -204,28 +199,53 @@ void SfmlEditorView::HandleEvent(const sf::Event& event)
 			}
 			return;
 		}
-		m_mouseCaptured = true;
-		m_lastMousePoint = ToPicturePoint(pressed->position);
 		const bool ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl)
 			|| sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RControl);
+		if (m_timeline.Contains(pressed->position))
+		{
+			m_timelineCaptured = true;
+			m_timeline.MouseDown(pressed->position, ctrl);
+			return;
+		}
+		m_mouseCaptured = true;
+		m_lastMousePoint = ToPicturePoint(pressed->position);
 		m_viewModel.MouseDown(m_lastMousePoint, ctrl);
 	}
 	else if (const auto* moved = event.getIf<sf::Event::MouseMoved>())
 	{
+		if (m_timelineCaptured)
+		{
+			m_timeline.MouseMove(moved->position);
+			return;
+		}
 		m_lastMousePoint = ToPicturePoint(moved->position);
 		m_viewModel.MouseMove(m_lastMousePoint);
 	}
 	else if (const auto* released = event.getIf<sf::Event::MouseButtonReleased>())
 	{
-		if (released->button == sf::Mouse::Button::Left && m_mouseCaptured)
+		if (released->button == sf::Mouse::Button::Left && m_timelineCaptured)
+		{
+			m_timelineCaptured = false;
+			m_timeline.MouseUp();
+		}
+		else if (released->button == sf::Mouse::Button::Left && m_mouseCaptured)
 		{
 			m_mouseCaptured = false;
 			m_lastMousePoint = ToPicturePoint(released->position);
 			m_viewModel.MouseUp(m_lastMousePoint);
 		}
 	}
+	else if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>())
+	{
+		if (wheel->wheel == sf::Mouse::Wheel::Vertical && m_timeline.Contains(wheel->position))
+		{
+			m_timeline.Scroll(wheel->delta);
+		}
+	}
 	else if (event.is<sf::Event::FocusLost>())
 	{
+		m_timelineCaptured = false;
+		m_timeline.CancelDrag();
 		m_mouseCaptured = false;
 		m_viewModel.MouseUp(m_lastMousePoint);
 	}
@@ -238,7 +258,7 @@ void SfmlEditorView::HandleEvent(const sf::Event& event)
 void SfmlEditorView::Zoom(double zoomScale)
 {
 	const auto size = m_window.getSize();
-	m_viewport.ZoomAt({ size.x / 2.0, (size.y - static_cast<double>(ToolbarHeight)) / 2 }, zoomScale);
+	m_viewport.ZoomAt({ size.x / 2.0, (size.y - static_cast<double>(toolbar::Height + timeline::Height)) / 2 }, zoomScale);
 	OnViewportChanged();
 }
 
@@ -259,6 +279,12 @@ void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 
 	if (key.code == sf::Keyboard::Key::Escape)
 	{
+		if (m_timelineCaptured)
+		{
+			m_timelineCaptured = false;
+			m_timeline.CancelDrag();
+			return;
+		}
 		m_viewModel.Cancel();
 		return;
 	}
@@ -271,6 +297,7 @@ void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 
 	if (!key.control)
 	{
+		HandleLayerKey(key);
 		return;
 	}
 
@@ -316,6 +343,22 @@ void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 	}
 }
 
+void SfmlEditorView::HandleLayerKey(const sf::Event::KeyPressed& key)
+{
+	if (!key.alt)
+	{
+		return;
+	}
+	if (key.code == sf::Keyboard::Key::Up)
+	{
+		m_viewModel.MoveSelectedLayers(1);
+	}
+	else if (key.code == sf::Keyboard::Key::Down)
+	{
+		m_viewModel.MoveSelectedLayers(-1);
+	}
+}
+
 void SfmlEditorView::SaveDocument()
 {
 	auto path = m_viewModel.GetFilePath();
@@ -358,13 +401,8 @@ void SfmlEditorView::OpenDocument()
 
 void SfmlEditorView::ChooseFillColor()
 {
-	if (!m_selectedStyle)
-	{
-		return;
-	}
-
 	m_mouseCaptured = false;
-	if (const auto color = m_colorDialog.AskColor(m_selectedStyle->fillColor))
+	if (const auto color = m_colorDialog.AskColor(m_style.fillColor))
 	{
 		m_viewModel.SetFillColor(*color);
 	}
@@ -372,13 +410,8 @@ void SfmlEditorView::ChooseFillColor()
 
 void SfmlEditorView::ChooseStrokeColor()
 {
-	if (!m_selectedStyle)
-	{
-		return;
-	}
-
 	m_mouseCaptured = false;
-	if (const auto color = m_colorDialog.AskColor(m_selectedStyle->strokeColor))
+	if (const auto color = m_colorDialog.AskColor(m_style.strokeColor))
 	{
 		m_viewModel.SetStrokeColor(*color);
 	}
@@ -409,9 +442,6 @@ bool SfmlEditorView::IsButtonEnabled(ToolbarButton button) const
 	{
 	case ToolbarButton::Delete:
 		return m_canDelete;
-	case ToolbarButton::FillColor:
-	case ToolbarButton::StrokeColor:
-		return m_selectedStyle.has_value();
 	default:
 		return true;
 	}
@@ -422,24 +452,24 @@ void SfmlEditorView::DrawSelection(const Rect& frame)
 	const auto toWindow = [this](const Rect& rect) {
 		const Point topLeft = m_viewport.ToScreen({ rect.left, rect.top });
 		const float zoom = static_cast<float>(m_viewport.GetZoom());
-		return std::pair{ sf::Vector2f(static_cast<float>(topLeft.x), static_cast<float>(topLeft.y) + ToolbarHeight),
+		return std::pair{ sf::Vector2f(static_cast<float>(topLeft.x), static_cast<float>(topLeft.y) + toolbar::Height),
 			sf::Vector2f(static_cast<float>(rect.width) * zoom, static_cast<float>(rect.height) * zoom) };
 	};
 
 	const auto [framePosition, frameSize] = toWindow(frame);
-	m_window.draw(MakeOutlinedRect(framePosition, frameSize, sf::Color(0, 120, 215), sf::Color::Transparent));
+	m_window.draw(MakeOutlinedRect(framePosition, frameSize, SelectionFrameColor, sf::Color::Transparent));
 
 	for (const auto& marker : GetMarkerRects(frame))
 	{
 		const auto [markerPosition, markerSize] = toWindow(marker);
-		m_window.draw(MakeOutlinedRect(markerPosition, markerSize, sf::Color(0, 120, 215), sf::Color::White));
+		m_window.draw(MakeOutlinedRect(markerPosition, markerSize, SelectionFrameColor, SelectionMarkerColor));
 	}
 }
 
 void SfmlEditorView::DrawToolbar()
 {
-	sf::RectangleShape background({ static_cast<float>(m_window.getSize().x), ToolbarHeight });
-	background.setFillColor(sf::Color(240, 240, 240));
+	sf::RectangleShape background({ static_cast<float>(m_window.getSize().x), toolbar::Height });
+	background.setFillColor(toolbar::BackgroundColor);
 	m_window.draw(background);
 
 	const auto hovered = FindToolbarButton(sf::Mouse::getPosition(m_window));
@@ -448,13 +478,13 @@ void SfmlEditorView::DrawToolbar()
 		const ToolbarButton button = ToolbarButtons[i];
 		const bool enabled = IsButtonEnabled(button);
 		const sf::Vector2f position = GetButtonPosition(i);
-		sf::Color fill = enabled && hovered == button ? sf::Color(220, 220, 220) : sf::Color(250, 250, 250);
+		sf::Color fill = enabled && hovered == button ? toolbar::ButtonHoveredColor : toolbar::ButtonColor;
 		if (m_tool && GetShapeType(button) == m_tool)
 		{
-			fill = sf::Color(190, 215, 245);
+			fill = toolbar::ButtonActiveColor;
 		}
-		m_window.draw(MakeOutlinedRect(position, { ButtonSize, ButtonSize }, sf::Color(0, 0, 0), fill));
-		DrawButtonIcon(m_window, button, position, enabled, m_selectedStyle);
+		m_window.draw(MakeOutlinedRect(position, { toolbar::ButtonSize, toolbar::ButtonSize }, toolbar::ButtonBorderColor, fill));
+		DrawButtonIcon(m_window, button, position, enabled, m_style);
 	}
 	DrawZoom();
 }
@@ -462,25 +492,25 @@ void SfmlEditorView::DrawToolbar()
 void SfmlEditorView::DrawZoom()
 {
 	static sf::Font font;
-	static const bool hasFont = font.openFromFile("C:/Windows/Fonts/segoeui.ttf");
+	static const bool hasFont = font.openFromFile(FontPath);
 	if (!hasFont)
 	{
 		return;
 	}
 
 	const long percent = std::lround(m_viewport.GetZoom() * 100);
-	sf::Text text(font, std::to_string(percent) + "%", 16);
-	text.setFillColor(sf::Color(40, 40, 40));
+	sf::Text text(font, std::to_string(percent) + "%", toolbar::ZoomFontSize);
+	text.setFillColor(toolbar::TextColor);
 
 	const sf::FloatRect bounds = text.getLocalBounds();
-	text.setPosition({ static_cast<float>(m_window.getSize().x) - bounds.size.x - bounds.position.x - 2 * ButtonSpacing,
-		(ToolbarHeight - bounds.size.y) / 2 - bounds.position.y });
+	text.setPosition({ static_cast<float>(m_window.getSize().x) - bounds.size.x - bounds.position.x - 2 * toolbar::ButtonSpacing,
+		(toolbar::Height - bounds.size.y) / 2 - bounds.position.y });
 	m_window.draw(text);
 }
 
 Point SfmlEditorView::ToPicturePoint(sf::Vector2i position) const
 {
-	return m_viewport.ToPicture({ static_cast<double>(position.x), static_cast<double>(position.y) - ToolbarHeight });
+	return m_viewport.ToPicture({ static_cast<double>(position.x), static_cast<double>(position.y) - toolbar::Height });
 }
 
 std::optional<ToolbarButton> SfmlEditorView::FindToolbarButton(sf::Vector2i position) const
@@ -488,7 +518,7 @@ std::optional<ToolbarButton> SfmlEditorView::FindToolbarButton(sf::Vector2i posi
 	const sf::Vector2f point(position);
 	for (int i = 0; i < ToolbarButtons.size(); i++)
 	{
-		const sf::FloatRect button(GetButtonPosition(i), { ButtonSize, ButtonSize });
+		const sf::FloatRect button(GetButtonPosition(i), { toolbar::ButtonSize, toolbar::ButtonSize });
 		if (button.contains(point))
 		{
 			return ToolbarButtons[i];

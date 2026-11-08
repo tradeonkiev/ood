@@ -1,5 +1,7 @@
 #include "SelectionFrame.h"
 
+#include "Constants/EditorConstants.h"
+
 #include <algorithm>
 #include <cmath>
 #include <utility>
@@ -44,7 +46,7 @@ std::array<Rect, 4> GetMarkerRects(const Rect& frame)
 	const auto corners = GetCorners(frame);
 	for (int i = 0; i < corners.size(); i++)
 	{
-		markers[i] = { corners[i].x - 5, corners[i].y - 5, 10, 10 };
+		markers[i] = { corners[i].x - MarkerSize / 2, corners[i].y - MarkerSize / 2, MarkerSize, MarkerSize };
 	}
 	return markers;
 }

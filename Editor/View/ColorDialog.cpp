@@ -24,7 +24,6 @@ std::optional<Color> ColorDialog::AskColor(Color initColor)
 
 	if (!ChooseColorW(&dialog))
 	{
-		std::cout << "ChooseColorW failed with error code: " << CommDlgExtendedError() << std::endl;
 		return std::nullopt;
 	}
 

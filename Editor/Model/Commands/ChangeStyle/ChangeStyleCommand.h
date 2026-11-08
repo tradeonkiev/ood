@@ -4,6 +4,7 @@
 #include "Model/Picture.h"
 
 #include <string>
+#include <vector>
 
 namespace editor
 {
@@ -15,6 +16,7 @@ public:
 	void Execute() override;
 	void Unexecute() override;
 	std::string GetName() const override;
+	std::vector<std::string> GetShapeIds() const override;
 
 private:
 	Picture& m_picture;

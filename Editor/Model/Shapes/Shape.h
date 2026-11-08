@@ -2,6 +2,7 @@
 
 #include "Canvas/ICanvas.h"
 #include "Geometry/Geometry.h"
+#include "Model/Shapes/LifeStyle.h"
 #include "Model/Shapes/ShapeStyle.h"
 
 #include <boost/signals2/connection.hpp>
@@ -24,6 +25,8 @@ public:
 	void SetStyle(const ShapeStyle& style);
 	Rect GetBounds() const;
 	void SetBounds(const Rect& bounds);
+	LifeStyle GetLifetime() const;
+	void SetLifetime(const LifeStyle& lifetime);
 
 	virtual std::string GetType() const = 0;
 	virtual bool ContainsPoint(const Point& point) const = 0;
@@ -38,6 +41,7 @@ private:
 	std::string m_id;
 	ShapeStyle m_style;
 	Rect m_bounds;
+	LifeStyle m_lifetime;
 	ChangedSignal m_changedSignal;
 };
 
