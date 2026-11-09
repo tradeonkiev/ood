@@ -315,6 +315,9 @@ void SfmlEditorView::HandleKey(const sf::Event::KeyPressed& key)
 	case sf::Keyboard::Key::O:
 		OpenDocument();
 		break;
+	case sf::Keyboard::Key::G:
+		key.shift ? m_viewModel.UngroupSelected() : m_viewModel.GroupSelected();
+		break;
 	case sf::Keyboard::Key::N:
 		key.shift ? m_viewModel.OpenNewWindow() : m_viewModel.NewDocument();
 		break;

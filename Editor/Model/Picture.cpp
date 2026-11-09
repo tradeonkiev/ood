@@ -1,5 +1,7 @@
 #include "Picture.h"
 
+#include "Model/Shapes/GroupShape.h"
+
 #include <stdexcept>
 #include <utility>
 
@@ -56,9 +58,23 @@ void Picture::MoveShape(const std::string& id, int newIndex)
 	m_shapeMovedSignal(*m_shapes[newIndex]);
 }
 
-Shape& Picture::GetShape(const std::string& id) { return *m_shapes[GetShapeIndex(id)]; }
+Shape& Picture::GetShape(const std::string& id)
+{
+	if (Shape* shape = FindShape(id))
+	{
+		return *shape;
+	}
+	throw std::out_of_range("Shape with id " + id + " was not found");
+}
 
-const Shape& Picture::GetShape(const std::string& id) const { return *m_shapes[GetShapeIndex(id)]; }
+const Shape& Picture::GetShape(const std::string& id) const
+{
+	if (const Shape* shape = FindShape(id))
+	{
+		return *shape;
+	}
+	throw std::out_of_range("Shape with id " + id + " was not found");
+}
 
 const Shape& Picture::GetShapeAt(int index) const { return *m_shapes.at(index); }
 
@@ -77,6 +93,38 @@ int Picture::GetShapeIndex(const std::string& id) const
 int Picture::GetShapeCount() const { return static_cast<int>(m_shapes.size()); }
 
 bool Picture::HasShape(const std::string& id) const { return m_shapeConnections.contains(id); }
+
+std::optional<std::string> Picture::FindRootId(const std::string& id) const
+{
+	for (const auto& shape : m_shapes)
+	{
+		const GroupShape* group = shape->GetGroup();
+		if (shape->GetId() == id || (group && group->FindShape(id)))
+		{
+			return shape->GetId();
+		}
+	}
+	return std::nullopt;
+}
+
+Shape* Picture::FindShape(const std::string& id) const
+{
+	for (const auto& shape : m_shapes)
+	{
+		if (shape->GetId() == id)
+		{
+			return shape.get();
+		}
+		if (const GroupShape* group = shape->GetGroup())
+		{
+			if (Shape* found = group->FindShape(id))
+			{
+				return found;
+			}
+		}
+	}
+	return nullptr;
+}
 
 const Shape* Picture::FindShapeAtPoint(const Point& point, double time) const
 {

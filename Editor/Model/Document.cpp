@@ -1,10 +1,33 @@
 #include "Document.h"
 
+#include "Model/Shapes/GroupShape.h"
+
 #include <format>
 #include <utility>
 
 namespace editor
 {
+
+namespace
+{
+
+int CountShapes(const Shape& shape)
+{
+	const GroupShape* group = shape.GetGroup();
+	if (!group)
+	{
+		return 1;
+	}
+
+	int count = 1;
+	for (int i = 0; i < group->GetShapeCount(); i++)
+	{
+		count += CountShapes(group->GetShapeAt(i));
+	}
+	return count;
+}
+
+} // namespace
 
 Document::Document()
 {
@@ -17,9 +40,9 @@ Document::Document(std::vector<std::unique_ptr<Shape>> shapes, std::filesystem::
 {
 	for (auto& shape : shapes)
 	{
+		m_nextShapeId += CountShapes(*shape);
 		m_picture.AddShape(std::move(shape));
 	}
-	m_nextShapeId = m_picture.GetShapeCount() + 1;
 }
 
 Picture& Document::GetPicture() { return m_picture; }

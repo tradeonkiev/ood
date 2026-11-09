@@ -40,10 +40,15 @@ void Shape::SetLifetime(const LifeStyle& lifetime)
 
 void Shape::Draw(ICanvas& canvas) const
 {
-	canvas.SetFillColor(m_style.fillColor);
-	canvas.SetStrokeColor(m_style.strokeColor);
+	const ShapeStyle style = GetStyle();
+	canvas.SetFillColor(style.fillColor);
+	canvas.SetStrokeColor(style.strokeColor);
 	DrawGeometry(canvas);
 }
+
+GroupShape* Shape::GetGroup() { return nullptr; }
+
+const GroupShape* Shape::GetGroup() const { return nullptr; }
 
 boost::signals2::connection Shape::SubscribeToChanged(const ChangedSignal::slot_type& handler)
 {

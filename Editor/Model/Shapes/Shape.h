@@ -12,6 +12,8 @@
 namespace editor
 {
 
+class GroupShape;
+
 class Shape
 {
 public:
@@ -21,15 +23,17 @@ public:
 	virtual ~Shape() = default;
 
 	const std::string& GetId() const;
-	ShapeStyle GetStyle() const;
-	void SetStyle(const ShapeStyle& style);
-	Rect GetBounds() const;
-	void SetBounds(const Rect& bounds);
+	virtual ShapeStyle GetStyle() const;
+	virtual void SetStyle(const ShapeStyle& style);
+	virtual Rect GetBounds() const;
+	virtual void SetBounds(const Rect& bounds);
 	LifeStyle GetLifetime() const;
 	void SetLifetime(const LifeStyle& lifetime);
 
 	virtual std::string GetType() const = 0;
 	virtual bool ContainsPoint(const Point& point) const = 0;
+	virtual GroupShape* GetGroup();
+	virtual const GroupShape* GetGroup() const;
 	void Draw(ICanvas& canvas) const;
 
 	boost::signals2::connection SubscribeToChanged(const ChangedSignal::slot_type& handler);
@@ -37,12 +41,13 @@ public:
 protected:
 	virtual void DrawGeometry(ICanvas& canvas) const = 0;
 
+	ChangedSignal m_changedSignal;
+
 private:
 	std::string m_id;
 	ShapeStyle m_style;
 	Rect m_bounds;
 	LifeStyle m_lifetime;
-	ChangedSignal m_changedSignal;
 };
 
 } // namespace editor

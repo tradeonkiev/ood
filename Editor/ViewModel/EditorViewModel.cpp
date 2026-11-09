@@ -7,8 +7,11 @@
 #include "Model/Commands/ChangeStyle/ChangeStyleCommand.h"
 #include "Model/Commands/DeleteShape/DeleteShapeCommand.h"
 #include "Model/Commands/Group/GroupCommand.h"
+#include "Model/Commands/GroupShapes/GroupShapesCommand.h"
 #include "Model/Commands/MoveShape/MoveShapeCommand.h"
+#include "Model/Commands/UngroupShapes/UngroupShapesCommand.h"
 #include "Model/ShapeFactory.h"
+#include "Model/Shapes/GroupShape.h"
 
 #include <algorithm>
 #include <format>
@@ -31,6 +34,37 @@ std::string GetTypeName(ShapeType type)
 		return "triangle";
 	}
 	return {};
+}
+
+void DrawPreview(ICanvas& canvas, const Shape& shape, const Rect& bounds)
+{
+	const GroupShape* group = shape.GetGroup();
+	if (!group)
+	{
+		CreateShape(shape.GetType(), shape.GetId(), shape.GetStyle(), bounds)->Draw(canvas);
+		return;
+	}
+
+	const Rect old = shape.GetBounds();
+	for (int i = 0; i < group->GetShapeCount(); i++)
+	{
+		const Shape& child = group->GetShapeAt(i);
+		DrawPreview(canvas, child, MapRect(child.GetBounds(), old, bounds));
+	}
+}
+
+void CollectLeafIds(const Shape& shape, std::vector<std::string>& ids)
+{
+	const GroupShape* group = shape.GetGroup();
+	if (!group)
+	{
+		ids.push_back(shape.GetId());
+		return;
+	}
+	for (int i = 0; i < group->GetShapeCount(); i++)
+	{
+		CollectLeafIds(group->GetShapeAt(i), ids);
+	}
 }
 
 EditorViewModel::EditorViewModel(std::shared_ptr<Document> document, IWindowService& windows)
@@ -71,7 +105,7 @@ void EditorViewModel::DrawPicture(ICanvas& canvas) const
 		}
 		else
 		{
-			CreateShape(shape.GetType(), shape.GetId(), shape.GetStyle(), preview->second)->Draw(canvas);
+			DrawPreview(canvas, shape, preview->second);
 		}
 	}
 
@@ -257,6 +291,56 @@ void EditorViewModel::MoveSelectedLayers(int delta)
 	if (!group->IsEmpty())
 	{
 		Execute(std::move(group));
+	}
+}
+
+void EditorViewModel::GroupSelected()
+{
+	FinishDrag();
+	if (m_state.selection.size() < 2)
+	{
+		return;
+	}
+
+	std::vector<std::string> ids;
+	for (int i = 0; i < m_picture.GetShapeCount(); i++)
+	{
+		const std::string& id = m_picture.GetShapeAt(i).GetId();
+		if (IsSelected(id))
+		{
+			ids.push_back(id);
+		}
+	}
+
+	const std::string groupId = m_document->GenerateShapeId();
+	Execute(std::make_unique<GroupShapesCommand>(m_picture, groupId, std::move(ids)));
+	SetSelection({ groupId });
+}
+
+void EditorViewModel::UngroupSelected()
+{
+	FinishDrag();
+	std::vector<std::string> freed;
+	auto group = std::make_unique<GroupCommand>();
+	for (const auto& id : m_state.selection)
+	{
+		const GroupShape* shape = m_picture.GetShape(id).GetGroup();
+		if (!shape)
+		{
+			freed.push_back(id);
+			continue;
+		}
+		for (int i = 0; i < shape->GetShapeCount(); i++)
+		{
+			freed.push_back(shape->GetShapeAt(i).GetId());
+		}
+		group->Add(std::make_unique<UngroupShapesCommand>(m_picture, id));
+	}
+
+	if (!group->IsEmpty())
+	{
+		Execute(std::move(group));
+		SetSelection(std::move(freed));
 	}
 }
 
@@ -465,8 +549,14 @@ void EditorViewModel::ChangeSelectedStyle(const std::function<void(ShapeStyle& s
 {
 	FinishDrag();
 	change(m_state.newShapeStyle);
-	auto group = std::make_unique<GroupCommand>();
+	std::vector<std::string> leafIds;
 	for (const auto& id : m_state.selection)
+	{
+		CollectLeafIds(m_picture.GetShape(id), leafIds);
+	}
+
+	auto group = std::make_unique<GroupCommand>();
+	for (const auto& id : leafIds)
 	{
 		const ShapeStyle oldStyle = m_picture.GetShape(id).GetStyle();
 		ShapeStyle newStyle = oldStyle;
@@ -566,11 +656,12 @@ void EditorViewModel::SelectAffectedShapes(const ICommand* command)
 	std::vector<std::string> ids;
 	if (command)
 	{
-		for (auto& id : command->GetShapeIds())
+		for (const auto& id : command->GetShapeIds())
 		{
-			if (m_picture.HasShape(id))
+			const auto rootId = m_picture.FindRootId(id);
+			if (rootId && std::ranges::find(ids, *rootId) == ids.end())
 			{
-				ids.push_back(std::move(id));
+				ids.push_back(*rootId);
 			}
 		}
 	}

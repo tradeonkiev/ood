@@ -7,6 +7,7 @@
 #include <boost/signals2/signal.hpp>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -33,6 +34,7 @@ public:
 	int GetShapeIndex(const std::string& id) const;
 	int GetShapeCount() const;
 	bool HasShape(const std::string& id) const;
+	std::optional<std::string> FindRootId(const std::string& id) const;
 	const Shape* FindShapeAtPoint(const Point& point, double time) const;
 
 	boost::signals2::connection SubscribeToShapeAdded(const ShapeSignal::slot_type& handler);
@@ -41,6 +43,8 @@ public:
 	boost::signals2::connection SubscribeToShapeMoved(const ShapeSignal::slot_type& handler);
 
 private:
+	Shape* FindShape(const std::string& id) const;
+
 	std::vector<std::unique_ptr<Shape>> m_shapes;
 	std::map<std::string, boost::signals2::scoped_connection> m_shapeConnections;
 

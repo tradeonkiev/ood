@@ -89,6 +89,8 @@ public:
 	void SelectTool(ShapeType tool);
 	void SelectShape(const std::string& id, bool toggleSelection);
 	void MoveSelectedLayers(int delta);
+	void GroupSelected();
+	void UngroupSelected();
 	void SetCurrentTime(double time);
 	void BeginLifetimeResize(const std::string& id, LifetimeEdge edge);
 	void ResizeLifetime(double time);

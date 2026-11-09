@@ -42,12 +42,15 @@ add_library(editor_app
         Model/Commands/ChangeStyle/ChangeStyleCommand.cpp
         Model/Commands/DeleteShape/DeleteShapeCommand.cpp
         Model/Commands/Group/GroupCommand.cpp
+        Model/Commands/GroupShapes/GroupShapesCommand.cpp
         Model/Commands/History.cpp
         Model/Commands/MoveShape/MoveShapeCommand.cpp
+        Model/Commands/UngroupShapes/UngroupShapesCommand.cpp
         Model/Document.cpp
         Model/Picture.cpp
         Model/ShapeFactory.cpp
         Model/Shapes/EllipseShape.cpp
+        Model/Shapes/GroupShape.cpp
         Model/Shapes/RectangleShape.cpp
         Model/Shapes/Shape.cpp
         Model/Shapes/TriangleShape.cpp
