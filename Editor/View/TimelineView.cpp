@@ -200,9 +200,8 @@ void TimelineView::DrawRuler()
 	const int tickCount = static_cast<int>(std::lround(MaxTime / TickStep));
 	for (int i = 0; i <= tickCount; i++)
 	{
-		const bool major = i % 2 == 0;
 		const float x = TimeToX(i * TickStep);
-		const float height = major ? 8.f : 4.f;
+		const float height = static_cast<float>(i % 2 == 0 ? RulerNotchHeight : RulerNotchHeight / 2);
 		DrawRect(m_window, { x, ruler.position.y + RulerHeight - height }, { 1, height }, TickColor);
 	}
 }

@@ -639,7 +639,7 @@ void EditorViewModel::ForgetShape(const std::string& id)
 	std::erase(m_state.selection, id);
 	m_state.boundsBeforeDrag.erase(id);
 	m_state.previewBounds.erase(id);
-	if (m_state.mode == Mode::ResizeLifetime && m_state.lifetimeId == id)
+	if (m_state.mode == Mode::ResizeLifetime)
 	{
 		m_state.mode = Mode::None;
 	}

@@ -30,7 +30,8 @@ namespace timeline
 {
 
 inline constexpr float Height = 220;
-inline constexpr float RulerHeight = 24;
+inline constexpr float RulerHeight = 10;
+inline constexpr float RulerNotchHeight = RulerHeight;
 inline constexpr float RowHeight = 30;
 inline constexpr float RowPadding = 4;
 inline constexpr float NumberColumnWidth = 40;
